@@ -1,0 +1,38 @@
+# Do not check in LightNovels (copyright...)
+LN/*
+
+# TEMP
+TEMP/*
+
+# News files
+NEWS/*
+
+# Manga files
+Manga/*
+
+# DATA
+Data/*
+
+# pycache
+__pycache__/*
+*.pyc
+
+# build
+build/*
+
+# Don't check in the any books/etc
+*.epub
+
+# Everythign below was copy pasted I think....
+
+# Cache objects
+packer_cache/
+
+# Crash log
+crash.log
+
+# For built boxes
+*.box
+*.opf
+
+playground.py
