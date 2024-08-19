@@ -1,3 +1,8 @@
+# Video example (sep, 2023): https://youtu.be/JzMcd8BWqy4
+
+# Currently only supports learning Japanese as an English speaker
+# This project was started entirely for personal use! It was made as quickly as possible to be functional.
+
 # Before running:
 #  - Install Japanese language to windows!
 #    - win -> language settings -> Add a language -> Japanese
@@ -8,5 +13,4 @@
 
 # Info on converting epub->txt : /LN/convert_info.md
 
-# If it takes awhile to launch, it's likely in the process of downloading news files from NHK (only attempts first launch each day)
-
+# (UI TODO:) If it seems to be taking a long time to launch, it's likely in the process of downloading news files from NHK (check output).
