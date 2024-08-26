@@ -9,6 +9,7 @@ from japverbconj.verb_form_gen import generate_japanese_verb_by_str as verb_conj
 
 from jisho_api.word import Word
 
+import file_utils
 
 nhk = nhk_api.Api()
 JAM = Jamdict()
@@ -47,6 +48,7 @@ def get_definitions(word, num_definitions=3, basic=True, recursive_call=False):
     # 'info', 'kana_forms', 'kanji_forms', 'senses', 'set_info', 'text', 'to_dict', 'to_json'
     if word is None or len(word) == 0:
         return []
+
     lookup_result = JAM.lookup(word)
     results = []
     num = 0
@@ -66,7 +68,20 @@ def get_definitions(word, num_definitions=3, basic=True, recursive_call=False):
 
 
 def download_nhk_news():
+    # TODO: Should see if nhk api will allow some changes
+    #   - Output directory
+    #   - don't need m3u8 files
+
+    # Current workaround is to change directory and change back.
+
+    cur_dir = file_utils.get_current_directory()  # workaround
+    file_utils.change_current_directory(cur_dir + "\\News")  # workaround
     nhk.download_top_news(furigana=False, html_output=False, mp3=False, text=True)
+    file_utils.change_current_directory(cur_dir)  # workaround
+
+    # Below workaround can work instead but causes pointless downloads...
+    # file_utils.delete_files(file_utils.get_current_directory(), ".m3u8")
+    # file_utils.move_files(file_utils.get_current_directory(), file_utils.get_current_directory() + "\\News", ".txt")
 
 
 def get_verb_type(word):

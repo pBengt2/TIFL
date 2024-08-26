@@ -4,9 +4,9 @@ import random
 
 import pyautogui
 import py_win_keyboard_layout as pwkl
-from PySide2.QtWidgets import QGridLayout, QLabel, QLineEdit, QTextEdit, QListWidget, QWidget, QListWidgetItem, QMenu, QTableView, QAction
-from PySide2.QtGui import QKeyEvent, Qt, QColor, QCursor
-from PySide2.QtCore import QAbstractTableModel, QEvent
+from PySide6.QtWidgets import QGridLayout, QLabel, QLineEdit, QTextEdit, QListWidget, QWidget, QListWidgetItem, QMenu, QTableView
+from PySide6.QtGui import QKeyEvent, Qt, QColor, QCursor, QAction
+from PySide6.QtCore import QAbstractTableModel, QEvent
 
 import file_utils as file_utils
 import jp_utils as jp_utils
@@ -31,7 +31,7 @@ class VampaJpMainWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint)
         self.ignore_key_lock = True
 
     def post_load(self):
@@ -42,21 +42,21 @@ class VampaJpMainWidget(QWidget):
         pass
 
     def keyPressEvent(self, event):
-        if event.key() == Qt.Key_Return:  # enter
+        if event.key() == Qt.Key.Key_Return:  # enter
             self.ignore_key_lock = True
-        elif event.key() == Qt.Key_Control and not self.ignore_key_lock:  # ctrl
+        elif event.key() == Qt.Key.Key_Control and not self.ignore_key_lock:  # ctrl
             self.ctrl_pressed()
-        elif event.key() == Qt.Key_Alt:  # alt
+        elif event.key() == Qt.Key.Key_Alt:  # alt
             self.alt_pressed()
-        elif event.key() == Qt.Key_F5:  # f5
+        elif event.key() == Qt.Key.Key_F5:  # f5
             self.f5_pressed()
-        elif event.key() == Qt.Key_Shift:  # left shift to temporarily show definitions
+        elif event.key() == Qt.Key.Key_Shift:  # left shift to temporarily show definitions
             self.shift_pressed()
-        elif event.key() == Qt.Key_Escape:  # esc, close
+        elif event.key() == Qt.Key.Key_Escape:  # esc, close
             self.close()
-        elif event.key() == Qt.Key_Up:
+        elif event.key() == Qt.Key.Key_Up:
             self.up_pressed()
-        elif event.key() == Qt.Key_Down:
+        elif event.key() == Qt.Key.Key_Down:
             self.down_pressed()
         else:
             debug_print = False
@@ -84,11 +84,11 @@ class VampaJpMainWidget(QWidget):
         pass
 
     def keyReleaseEvent(self, event):
-        if event.key() == Qt.Key_Return:  # enter
+        if event.key() == Qt.Key.Key_Return:  # enter
             self.ignore_key_lock = False
-        elif event.key() == Qt.Key_Control and not self.ignore_key_lock:  # ctrl
+        elif event.key() == Qt.Key.Key_Control and not self.ignore_key_lock:  # ctrl
             self.ctrl_released()
-        elif event.key() == Qt.Key_Shift:  # left shift to temporarily show definitions
+        elif event.key() == Qt.Key.Key_Shift:  # left shift to temporarily show definitions
             self.shift_released()
 
         super().keyReleaseEvent(event)
@@ -103,7 +103,7 @@ class VampaJpMainWidget(QWidget):
         t = type(cur_event)
 
         if t == QKeyEvent:
-            if cur_event.key() == Qt.Key_Tab:  # tab key (skip current text)
+            if cur_event.key() == Qt.Key.Key_Tab:  # tab key (skip current text)
                 self.tab_pressed()
                 return True
         elif cur_event.type() == QEvent.Type.WindowDeactivate:
@@ -384,15 +384,15 @@ class VocabTableModel(QAbstractTableModel):
     def __init__(self, data):
         super(VocabTableModel, self).__init__()
         self._data = data
-        self.setHeaderData(1, Qt.Vertical, 'test')
+        self.setHeaderData(1, Qt.Orientation.Vertical, 'test')
 
         self.sort_inverse = False
         self.sorted_column = -1
 
         self.column_list = ['vocab', 'q_Correct', 'q_Incorrect', 'q_%', 'q_IaR', 'vr_C', 'vr_I', 'vr_%', 'vr_IaR', 'vr_Priority', 'vr_date']
 
-    def headerData(self, section, orientation, role=Qt.DisplayRole):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+    def headerData(self, section, orientation, role=Qt.ItemDataRole.DisplayRole):
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             return self.column_list[section]
         return super().headerData(section, orientation, role)
 
@@ -434,8 +434,8 @@ class VocabTableModel(QAbstractTableModel):
 
         self.layoutChanged.emit()
 
-    def data(self, index, role=Qt.DisplayRole):
-        if role == Qt.DisplayRole:
+    def data(self, index, role=Qt.ItemDataRole.DisplayRole):
+        if role == Qt.ItemDataRole.DisplayRole:
             return self._data[index.row()][index.column()]
 
     def rowCount(self, parent=None):
@@ -488,11 +488,11 @@ class MyListWidgetItem(QListWidgetItem):
         # 0 partially read, 1 not read, 2 fully read
         self.read_status = read_status
         if self.read_status == 1:
-            self.setTextColor(COLORS.BRIGHT_TEXT)
+            self.setForeground(COLORS.BRIGHT_TEXT)
         elif self.read_status == 0:
-            self.setTextColor(COLORS.DARK_TEXT)
+            self.setForeground(COLORS.DARK_TEXT)
         else:
-            self.setTextColor(COLORS.SECONDARY_TEXT)
+            self.setForeground(COLORS.SECONDARY_TEXT)
 
 
 # TODO: Zoom for non-aspect ratio images... T_T
@@ -559,7 +559,7 @@ class ClickableLabel(QLabel):
         self.prev_y_offset = y_offset
         pm = self.original_pm.copy()
         size = (self.max_width * self.zoom_lvl, self.max_height * self.zoom_lvl)
-        scaled_pm = pm.scaled(size[0], size[1], aspectMode=Qt.KeepAspectRatio).copy(x_offset * self.zoom_lvl, y_offset * self.zoom_lvl, self.max_width, self.max_height)
+        scaled_pm = pm.scaled(size[0], size[1], aspectMode=Qt.AspectRatioMode.KeepAspectRatio).copy(x_offset * self.zoom_lvl, y_offset * self.zoom_lvl, self.max_width, self.max_height)
         self.setPixmap(scaled_pm, False)
 
     def zoom(self, x, y, new_zoom):
@@ -575,18 +575,16 @@ class ClickableLabel(QLabel):
             pm = self.original_pm.copy()
             size = (self.max_width * self.zoom_lvl, self.max_height * self.zoom_lvl)
 
-            scaled_pm = pm.scaled(size[0], size[1], aspectMode=Qt.KeepAspectRatio).copy(x_offset * self.zoom_lvl,
-                                                                                        y_offset * self.zoom_lvl,
-                                                                                        self.max_width, self.max_height)
+            scaled_pm = pm.scaled(size[0], size[1], aspectMode=Qt.AspectRatioMode.KeepAspectRatio).copy(x_offset * self.zoom_lvl, y_offset * self.zoom_lvl, self.max_width, self.max_height)
             self.setPixmap(scaled_pm, False)
 
     def wheelEvent(self, event):
-        mouse_pos = event.pos()
+        mouse_pos = event.position()
 
         new_zoom = 1.0
-        if event.delta() > 0.0:
+        if event.angleDelta().y() > 0.0:
             new_zoom = self.zoom_lvl + 1.0
-        elif event.delta() < 0.0:
+        elif event.angleDelta().y() < 0.0:
             new_zoom = self.zoom_lvl - 1.0
 
         if new_zoom < 1.0:
@@ -636,7 +634,7 @@ class MyListWidget(QListWidget):
         for f in dir_list:
             file_path = os.path.join(self.directory_prefix, f)
             if f.endswith(self.file_type) or (self.file_type == "dir" and os.path.isdir(file_path)):
-                if not self.findItems(f, Qt.MatchFlag().MatchExactly):
+                if not self.findItems(f, Qt.MatchFlag.MatchExactly):
                     item = MyListWidgetItem(f)
 
                     filename = self.directory_prefix + str(item.text())
@@ -660,11 +658,11 @@ class MyListWidget(QListWidget):
             book_index = self.parent_gui.get_book_index(filename)
             book_total_chars = self.parent_gui.get_book_total_characters(filename)
             if book_index == 0:
-                item.setTextColor(COLORS.BRIGHT_TEXT)
+                item.setForeground(COLORS.BRIGHT_TEXT)
             elif book_index == book_total_chars:
-                item.setTextColor(COLORS.DARK_TEXT)
+                item.setForeground(COLORS.DARK_TEXT)
             else:
-                item.setTextColor(COLORS.SECONDARY_TEXT)
+                item.setForeground(COLORS.SECONDARY_TEXT)
 
 
 class COLORS:
@@ -699,7 +697,7 @@ class COLORS:
 class NoScrollTextEdit(QTextEdit):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
     def wheelEvent(self, event):  # override to disable scrolling
         return True
@@ -713,7 +711,7 @@ class InputLineEdit(QLineEdit):
 
     def event(self, cur_event):
         if type(cur_event) is QKeyEvent:
-            if cur_event.key() == Qt.Key_Tab:  # tab key
+            if cur_event.key() == Qt.Key.Key_Tab:  # tab key
                 return True  # Intentionally remove functionality
         return super().event(cur_event)
 

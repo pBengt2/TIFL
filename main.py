@@ -1,5 +1,5 @@
-from PySide2.QtWidgets import QApplication, QWidget, QTextEdit, QGridLayout, QPushButton, QInputDialog, QLabel, QTabWidget, QHeaderView
-from PySide2.QtGui import QTextCursor, Qt, QPixmap
+from PySide6.QtWidgets import QApplication, QWidget, QTextEdit, QGridLayout, QPushButton, QInputDialog, QLabel, QTabWidget, QHeaderView
+from PySide6.QtGui import QTextCursor, Qt, QPixmap
 from datetime import date
 import sys
 import random
@@ -48,7 +48,7 @@ import pyside_utils
 # - GUI + automated epub import.
 
 
-DEFAULT_BLACK_IMG = r"F:/Python/vampaJP/Data/black.jpg"  # Dummy image for consistent page layout.
+DEFAULT_BLACK_IMG = r"black.png"  # Dummy image for consistent page layout.
 
 MANGA_VIEWER_DUAL_PANEL_MODE = True  # TODO: Settings panel
 MANGA_VIEWER_WIDTH = 900  # 540  # 900  # 1800  # TODO: Settings panel
@@ -183,7 +183,7 @@ class MainGui(pyside_utils.VampaJpMainWidget):
             self.reading_layout.addWidget(self.reading_img_lbl_left, cur_row, 0)
             self.reading_layout.addWidget(self.reading_img_lbl_right, cur_row, 1)
         else:
-            self.reading_layout.addWidget(self.reading_img_lbl_left, cur_row, 0, 1, 2, alignment=Qt.AlignCenter)
+            self.reading_layout.addWidget(self.reading_img_lbl_left, cur_row, 0, 1, 2, alignment=Qt.AlignmentFlag.AlignCenter)
         cur_row += 1
         self.button_layout.addWidget(self.btn_save_vocab, cur_row, 0)
         self.button_layout.addWidget(self.btn_set_location, cur_row, 1)
@@ -235,10 +235,10 @@ class MainGui(pyside_utils.VampaJpMainWidget):
 
         self.vocab_table.setModel(self.vocab_model)
 
-        self.vocab_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-        self.vocab_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+        self.vocab_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.vocab_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         self.vocab_table.horizontalHeader().setSectionsClickable(False)
-        self.vocab_table.verticalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.vocab_table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.vocab_table.verticalHeader().setVisible(False)
         self.vocab_table.selectionModel().selectionChanged.connect(self.vocab_selection_changed)
         self.vocab_table.doubleClicked.connect(self.vocab_table_double_clicked)
@@ -298,7 +298,7 @@ class MainGui(pyside_utils.VampaJpMainWidget):
 
     def _setup_tabs(self):
         self.tabs.currentChanged.connect(self.tab_changed)
-        self.tabs.setTabPosition(QTabWidget.West)
+        self.tabs.setTabPosition(QTabWidget.TabPosition.West)
         self.tabs.setMovable(True)
 
         self._setup_reading_tab()
@@ -372,7 +372,7 @@ class MainGui(pyside_utils.VampaJpMainWidget):
     def _refresh_reading_layout(self):
         if self.manga_mode:
             self.reading_layout.setRowMinimumHeight(0, MANGA_VIEWER_HEIGHT)
-            self.reading_layout.setRowMinimumHeight(1, READING_LAYOUT_ROW_TEXT_MIN_HEIGHT / 2)
+            self.reading_layout.setRowMinimumHeight(1, int(READING_LAYOUT_ROW_TEXT_MIN_HEIGHT / 2))
             self.reading_layout.itemAt(0).widget().show()
             self.reading_layout.itemAt(1).widget().show()
             self.text_field_max_text = int(TEXT_FIELD_MAX_TEXT / 2)
@@ -509,12 +509,12 @@ class MainGui(pyside_utils.VampaJpMainWidget):
     def _change_manga_img(self, left_file, right_file=None):
         if MANGA_VIEWER_DUAL_PANEL_MODE:
             pixmap = QPixmap(left_file)
-            self.reading_img_lbl_left.setPixmap(pixmap.scaled(MANGA_VIEWER_WIDTH, MANGA_VIEWER_HEIGHT, aspectMode=Qt.KeepAspectRatio))
+            self.reading_img_lbl_left.setPixmap(pixmap.scaled(MANGA_VIEWER_WIDTH, MANGA_VIEWER_HEIGHT, aspectMode=Qt.AspectRatioMode.KeepAspectRatio))
             pm2 = QPixmap(right_file)
-            self.reading_img_lbl_right.setPixmap(pm2.scaled(MANGA_VIEWER_WIDTH, MANGA_VIEWER_HEIGHT, aspectMode=Qt.KeepAspectRatio))
+            self.reading_img_lbl_right.setPixmap(pm2.scaled(MANGA_VIEWER_WIDTH, MANGA_VIEWER_HEIGHT, aspectMode=Qt.AspectRatioMode.KeepAspectRatio))
         else:
             pixmap = QPixmap(left_file)
-            self.reading_img_lbl_left.setPixmap(pixmap.scaled(MANGA_VIEWER_WIDTH*2, MANGA_VIEWER_HEIGHT, aspectMode=Qt.KeepAspectRatio))
+            self.reading_img_lbl_left.setPixmap(pixmap.scaled(MANGA_VIEWER_WIDTH*2, MANGA_VIEWER_HEIGHT, aspectMode=Qt.AspectRatioMode.KeepAspectRatio))
             if right_file is not None:
                 print("Sent 2 images during single panel mode...")
 
@@ -762,9 +762,9 @@ class MainGui(pyside_utils.VampaJpMainWidget):
     """************************************** EVENTS **************************************"""
     def mousePressEvent(self, event):
         super().mousePressEvent(event)
-        if event.button() == Qt.BackButton:
+        if event.button() == Qt.MouseButton.BackButton:
             self.change_to_previous_file()
-        elif event.button() == Qt.ForwardButton:
+        elif event.button() == Qt.MouseButton.ForwardButton:
             self.change_to_next_file()
 
     def ctrl_pressed(self):
@@ -942,7 +942,7 @@ class MainGui(pyside_utils.VampaJpMainWidget):
         cursor = self.text_field.textCursor()
         position = self.buffer_index - self.text_field_i1
         cursor.setPosition(position)
-        cursor.setPosition(position + self.selection_size, QTextCursor.KeepAnchor)
+        cursor.setPosition(position + self.selection_size, QTextCursor.MoveMode.KeepAnchor)
         self.text_field.setTextCursor(cursor)
 
     def text_selected(self):
@@ -996,7 +996,7 @@ class MainGui(pyside_utils.VampaJpMainWidget):
 
         self.buffer_index = file_utils.read_key(data, self.current_txt_file, 0)
 
-        if data["last_date"] != str(date.today()):
+        if file_utils.read_key(data, "last_date", "") != str(date.today()):
             jp_utils.download_nhk_news()
 
         random.shuffle(self.vocab_list)
@@ -1022,7 +1022,7 @@ class MainGui(pyside_utils.VampaJpMainWidget):
             pruned_book_dict = self.book_dict.copy()
             key_list = [k for k in pruned_book_dict.keys()]
             for key in key_list:
-                if key.startswith("TEMP"):
+                if key is not None and key.startswith("TEMP"):
                     pruned_book_dict.pop(key)
 
             last_file = self.current_txt_file
@@ -1046,7 +1046,7 @@ def setup_gui():
     window = MainGui()
     window.setGeometry(25, 25, 100, 100)
     window.show()
-    app.exec_()
+    app.exec()
 
 
 def main():

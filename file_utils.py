@@ -12,6 +12,18 @@ VOCAB_STATS_DATA = r"Data/vocab_stats.json"  # 'vocab': { 'correct', 'incorrect'
 VOCAB_RUSH_DATA = r"Data/vocab_rush.json"  # vocab: { 'correct', 'incorrect', 'in_a_row', 'last_date' }
 
 
+def change_current_directory(full_path):
+    os.chdir(full_path)
+
+
+def _dont_delete_or_move_files():
+    return [DEFAULT_TXT_FILE, "requirements.txt", "black.png", "dummy_input.txt", "readme.md", "license"]
+
+
+def get_current_directory():
+    return os.getcwd()
+
+
 def get_file_list(directory, ext=None):
     if ext is None:
         return [f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))]
@@ -47,19 +59,46 @@ def read_txt_file(filename):
     return data
 
 
-def create_directory_if_needed(filename):
+def move_files(directory, target_directory, file_extensions, ignore_files=None):
+    _create_directory_if_needed(target_directory)
+    updated_ignore_files = _dont_delete_or_move_files()
+    if ignore_files is not None:
+        for f in ignore_files:
+            updated_ignore_files.append(f)
+
+    to_move = get_file_list(directory, file_extensions)
+    for fn in to_move:
+        if fn.lower() not in updated_ignore_files:
+            cur_name = directory + "\\" + fn
+            dest_name = target_directory + "\\" + fn
+            os.rename(cur_name, dest_name)
+
+
+def delete_files(directory, file_extension, ignore_files=None):
+    updated_ignore_files = _dont_delete_or_move_files()
+    if ignore_files is not None:
+        for f in ignore_files:
+            updated_ignore_files.append(f)
+
+    to_delete = get_file_list(directory, file_extension)
+    for fn in to_delete:
+        if fn.lower() not in updated_ignore_files:
+            os.remove(fn)
+
+
+def _create_directory_if_needed(filename):
     if not os.path.exists(filename.rsplit(r'/', 1)[0]):
         os.makedirs(filename.rsplit(r'/', 1)[0])
 
 
 def save_txt_file(filename, text):
-    create_directory_if_needed(filename)
+    _create_directory_if_needed(filename)
     with open(filename, "w", encoding="utf8") as f:
         f.write(text)
 
 
 def save_json_data(filename, data):
-    create_directory_if_needed(filename)
+    _create_directory_if_needed(filename)
     with open(filename, "w") as data_file:
         json.dump(data, data_file, indent=2, ensure_ascii=False)
 

@@ -1,9 +1,11 @@
 jisho-api~=0.1.8
 nhk-easy~=0.0.9
-PySide2~=5.15.2.1
+PySide6~=6.7.2
 jamdict~=0.1a11.post2
 PyAutoGUI~=0.9.54
 py_win_keyboard_layout~=0.2
 mecab-python3~=1.0.6
+japanese-verb-conjugator-v2~=0.4.0
+mecab-python3 ~= 1.0.9
 mokuro
 requests
