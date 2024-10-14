@@ -1,14 +1,15 @@
 from PySide6.QtWidgets import QApplication, QWidget, QTextEdit, QGridLayout, QPushButton, QInputDialog, QLabel, QTabWidget, QHeaderView
 from PySide6.QtGui import QTextCursor, Qt, QPixmap
-from datetime import date
+from datetime import date, timedelta
 import sys
 import random
 import os
 
-import vocab_utils
+import data_utils
 import file_utils
 import jp_utils
 import pyside_utils
+import vocab_utils
 
 
 # TODO: High Priority
@@ -16,21 +17,24 @@ import pyside_utils
 #       - Possibly walk the directory until hitting desired file to find chapter + page
 #       - Possibly store chapter + page number...
 #       - Possibly standardize the Manga directory...
-# - Cleanup requirements.
-# - (Bug Fix) : txt files that don't end with a punctuation don't mark as complete.
 # - GUI should let you know that it's downloading NHK news on launch (currently doesn't launch until dl finished).
 
 # TODO: Mid Priority
 # - Should add version numbers to json data.
-# - Settings page in GUI
-# - Dynamic UI (ie, drag for sizes.
+# - Separate Manga reader from txt reader...
 
 # TODO: Low Priority
 # - (Minor feature): Right click to copy text.
 # - (feature) 'Free-type'/'playground' tab.
-# - (feature/setting) Screen resolution
+# - (setting) Window resolution
 # - (feature/setting) Manga reader settings
 # - reverse lookup (ie, english -> japanese).
+
+# TODO: Settings
+# - Window size
+
+# TODO: Nice to have
+# - Dynamic UI (ie, drag for sizes).
 
 # Future work
 # - Support for other languages (IE, generalize language functions, not adding 1 at a time).
@@ -82,6 +86,14 @@ elif WINDOW_SIZE == 2:
 class MainGui(pyside_utils.VampaJpMainWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
+
+        # Data
+        self.saved_data = data_utils.SavedData()
+        self.data_stale = False
+        self.vocab_stats = data_utils.VocabStatsData().get_data()
+        self.vocab_rush_data = vocab_utils.VocabRushData(load=False)
+
+        # Reading / typing
         self.buffer_index = 0
         self.text_buffer = ""
         self.text_field_i1 = 0
@@ -92,14 +104,17 @@ class MainGui(pyside_utils.VampaJpMainWidget):
         self.selection_size = 0  # Only relevant for keyboard hotkeys
         self.selection_size_previous_buffer_index = self.buffer_index  # Used to reset selection_size
         self.show_english_definitions = False
-        self.vocab_drill_window = None
-        self.vocab_list_filter = None
+
+        # File breadcrumbs
         self.previous_files_stack = []
         self.file_stack_index = 0
-        self.vocab_stats = file_utils.load_json(file_utils.VOCAB_STATS_DATA)
-        self.data_stale = False
-        self.vocab_rush_data = vocab_utils.VocabRushData(load=False)
+
+        # Misc / unsorted
         self.auto_word_select = False
+        self.vocab_drill_window = None
+        self.vocab_list_filter = None
+
+        # Manga
         self.manga_mode = False
         self.manga_chapter = 0
         self.manga_page = 0
@@ -107,18 +122,19 @@ class MainGui(pyside_utils.VampaJpMainWidget):
         self.total_manga_chapters = 0
         self.total_manga_pages = 0
 
+        # GUI...
         self.text_field = pyside_utils.NoScrollTextEdit(self)
         self.input_line = pyside_utils.InputLineEdit(self)
+        self.definition_field = QTextEdit(self)
+        self.bottom_left_text = QLabel(self)
         if MANGA_VIEWER_DUAL_PANEL_MODE:
             self.reading_img_lbl_left = pyside_utils.ClickableLabel(self, self.left_img_clicked, MANGA_VIEWER_WIDTH, MANGA_VIEWER_HEIGHT)
             self.reading_img_lbl_right = pyside_utils.ClickableLabel(self, self.right_img_clicked, MANGA_VIEWER_WIDTH, MANGA_VIEWER_HEIGHT)
         else:
             self.reading_img_lbl_left = pyside_utils.ClickableLabel(self, self.left_img_clicked, MANGA_VIEWER_WIDTH * 2, MANGA_VIEWER_HEIGHT)
-        self.definition_field = QTextEdit(self)
-        self.bottom_left_text = QLabel(self)
-        self.tabs = QTabWidget(self)
-        self.main_layout = QGridLayout(self)
 
+        self.main_layout = QGridLayout(self)
+        self.tabs = QTabWidget(self)
         self.reading_tab = QWidget(self)
         self.reading_layout = QGridLayout(self.reading_tab)
 
@@ -140,15 +156,15 @@ class MainGui(pyside_utils.VampaJpMainWidget):
 
         self.news_tab = QWidget(self)
         self.news_layout = QGridLayout(self.news_tab)
-        self.news_field = pyside_utils.MyListWidget(parent=self, directory_prefix=r"News/")
+        self.news_field = pyside_utils.MyListWidget(parent=self, saved_data=self.saved_data, directory_prefix=r"News/")
 
         self.books_tab = QWidget(self)
         self.books_layout = QGridLayout(self.books_tab)
-        self.books_field = pyside_utils.MyListWidget(parent=self, directory_prefix=r"LN/")
+        self.books_field = pyside_utils.MyListWidget(parent=self, saved_data=self.saved_data, directory_prefix=r"LN/")
 
         self.manga_tab = QWidget(self)
         self.manga_layout = QGridLayout(self.manga_tab)
-        self.manga_field = pyside_utils.MyListWidget(parent=self, directory_prefix=r"Manga/", file_type="dir")
+        self.manga_field = pyside_utils.MyListWidget(parent=self, saved_data=self.saved_data, directory_prefix=r"Manga/", file_type="dir")
 
         self.log_tab = QWidget(self)
         self.log_layout = QGridLayout(self.log_tab)
@@ -157,12 +173,12 @@ class MainGui(pyside_utils.VampaJpMainWidget):
         self.settings_tab = QWidget(self)
         self.settings_layout = QGridLayout(self.settings_tab)
 
+        # Current state...
         self.current_txt_file = None
         self.current_manga_directory = None
 
-        self.vocab_list = []
-        self.vocab_sentences = {}
-        self.book_dict = {}
+        self.vocab_list = []  # TODO: delete
+        self.vocab_sentences = {}  # TODO: delete
 
         self._setup_helper()
 
@@ -481,14 +497,6 @@ class MainGui(pyside_utils.VampaJpMainWidget):
         end_index = self.find_current_sentence_end_index()
         sentence = self.text_buffer[start_index:end_index]
         return sentence
-
-    def get_saved_chapter(self, book_title):
-        book_info = file_utils.read_key(self.book_dict, book_title, {})
-        return file_utils.read_key(book_info, "saved_chapter", 0)
-
-    def get_saved_page(self, book_title):
-        book_info = file_utils.read_key(self.book_dict, book_title, {})
-        return file_utils.read_key(book_info, "saved_page", 0)
     """************************************** END READING **************************************"""
 
     """************************************** MANGA **************************************"""
@@ -724,11 +732,10 @@ class MainGui(pyside_utils.VampaJpMainWidget):
             temp_filename = "TEMP/" + v + ".txt"
             all_sentences = ""
             try:
-                sentences = self.vocab_sentences[v]
+                sentences = data_utils.VocabSentences().get_data()[v]
             except KeyError:
                 vocab_utils.update_all()
-                self.vocab_sentences = file_utils.load_json(file_utils.VOCAB_SENTENCES_DATA)
-                sentences = file_utils.read_key(self.vocab_sentences, v, [])
+                sentences = data_utils.VocabSentences().get_sentences(v)
 
             random.shuffle(sentences)
             for s in sentences:
@@ -760,14 +767,6 @@ class MainGui(pyside_utils.VampaJpMainWidget):
             txt_file = r"LN/" + item.text()
             self.change_txt_file(txt_file)
             return
-
-    def get_book_index(self, book_title):
-        book_info = file_utils.read_key(self.book_dict, book_title, {})
-        return max(file_utils.read_key(book_info, "index", 0), 0)
-
-    def get_book_total_characters(self, book_title):
-        book_info = file_utils.read_key(self.book_dict, book_title, {})
-        return file_utils.read_key(book_info, "total_chars", 0)
     """************************************** END BOOKS **************************************"""
 
     """************************************** EVENTS **************************************"""
@@ -798,7 +797,7 @@ class MainGui(pyside_utils.VampaJpMainWidget):
 
     def f5_pressed(self):
         if self.tabs.currentIndex() == 1:  # vocab tab
-            self.vocab_stats = file_utils.load_json(file_utils.VOCAB_STATS_DATA)
+            self.vocab_stats = data_utils.VocabStatsData().get_data()
             self.vocab_rush_data = vocab_utils.VocabRushData()
             self.refresh_vocab_table()
         if self.tabs.currentIndex() == 2:  # news tab
@@ -853,7 +852,7 @@ class MainGui(pyside_utils.VampaJpMainWidget):
             if self.manga_mode:
                 self.buffer_index = 0
             else:
-                self.buffer_index = self.get_book_index(self.current_txt_file)
+                self.buffer_index = self.saved_data.get_book_index(self.current_txt_file)
 
         self.refresh_text_display()
 
@@ -988,49 +987,50 @@ class MainGui(pyside_utils.VampaJpMainWidget):
     """************************************** DATA **************************************"""
     def _load_manga_data(self, manga_file_path):
         self._manga_changed(manga_file_path)
-        chapter = self.get_saved_chapter(self.current_manga_directory)
-        page = self.get_saved_page(self.current_manga_directory)
+        chapter = self.saved_data.get_manga_chapter(self.current_manga_directory)
+        page = self.saved_data.get_manga_page(self.current_manga_directory)
         self._change_manga_page(chapter, page)
 
     def load_data(self):
-        data = file_utils.load_json(file_utils.JSON_SAVED_DATA)
-        self.book_dict = file_utils.read_key(data, "book_dict", {self.current_txt_file: 0})
-        self.vocab_list = file_utils.read_key(data, "vocab_list", [])
+        self.vocab_list = self.saved_data.get_vocab_list()
+        self.manga_mode = self.saved_data.was_manga_open()  # TODO: Manga should be it's own tab...
 
-        self.manga_mode = file_utils.read_key(data, "last_file_manga", False)
+        last_file = self.saved_data.get_last_open_file()
 
-        last_file = file_utils.read_key(data, "last_open_file", file_utils.DEFAULT_TXT_FILE)
         if self.manga_mode:
             self._load_manga_data(last_file)
         else:
             self.set_current_txt_file(last_file)
 
-        self.buffer_index = file_utils.read_key(file_utils.read_key(self.book_dict, self.current_txt_file, {}), "index", 0)
+        self.buffer_index = self.saved_data.get_book_index(self.current_txt_file)
 
-        if file_utils.read_key(data, "last_date", "") != str(date.today()):
+        if self.saved_data.get_saved_date() != str(date.today()):
             jp_utils.download_nhk_news()
 
         random.shuffle(self.vocab_list)
         self.refresh_vocab_table()
 
-        self.vocab_sentences = file_utils.load_json(file_utils.VOCAB_SENTENCES_DATA)
+        self.vocab_sentences = data_utils.VocabSentences().get_data()
         self.vocab_rush_data = vocab_utils.VocabRushData()
 
     def save_data(self, b_force=False):
         if self.data_stale or b_force:
+            # TODO: Saving should be handled by data_utils....
+            updated_book_dict = self.saved_data.get_book_dict()
+
             if self.current_txt_file is not None:
-                self.book_dict[self.current_txt_file.replace("\\", "/")] = {
+                updated_book_dict[self.current_txt_file.replace("\\", "/")] = {
                     "index": self.find_current_sentence_index(),
                     "total_chars": self.get_current_book_character_count()
                 }
 
             if self.current_manga_directory:
-                self.book_dict[self.current_manga_directory] = {
+                updated_book_dict[self.current_manga_directory] = {
                     "saved_chapter": self.manga_chapter,
                     "saved_page": self.manga_page
                 }
 
-            pruned_book_dict = self.book_dict.copy()
+            pruned_book_dict = updated_book_dict.copy()
             key_list = [k for k in pruned_book_dict.keys()]
             for key in key_list:
                 if key is not None and key.startswith("TEMP"):
@@ -1048,7 +1048,7 @@ class MainGui(pyside_utils.VampaJpMainWidget):
                 "last_manga_directory": self.current_manga_directory,
                 "last_date": str(date.today())
             }
-            file_utils.save_json_data(file_utils.JSON_SAVED_DATA, data)
+            self.saved_data.save_data(data)
     """************************************** END DATA **************************************"""
 
 

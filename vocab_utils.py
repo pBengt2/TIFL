@@ -5,6 +5,7 @@ from datetime import date
 
 from PySide6.QtWidgets import QApplication  # TODO: Refactor to use pyside_utils
 
+import data_utils
 import file_utils
 import jp_utils
 import pyside_utils
@@ -14,18 +15,15 @@ PRINT_WRONG_VOCAB = True  # TODO: Should be in GUI somehow instead...
 
 
 def load_data():
-    data = file_utils.load_json(file_utils.JSON_SAVED_DATA)
-    book_dict = file_utils.read_key(data, "book_dict", {file_utils.DEFAULT_TXT_FILE: 0})
-    vocab_list = file_utils.read_key(data, "vocab_list", [])
-
-    return book_dict, vocab_list
+    saved_data = data_utils.SavedData()
+    return saved_data.get_book_dict(), saved_data.get_vocab_list()
 
 
 class VocabRushData:
     def __init__(self, load=True):
         self.loaded_data = load
         if load:
-            self.vocab_data = file_utils.load_json(file_utils.VOCAB_RUSH_DATA)
+            self.vocab_data = data_utils.VocabRushData().get_data()
         else:
             self.vocab_data = {}
         # 'correct', 'incorrect', 'in_a_row', 'last_date'
@@ -105,7 +103,7 @@ class VocabRushData:
             print("Attempting to update vocab rush data from loaded data...")
             return
 
-        combined_data = file_utils.load_json(file_utils.VOCAB_RUSH_DATA)
+        combined_data = data_utils.VocabRushData().get_data()
 
         debug_print = False
         if debug_print:
@@ -127,7 +125,7 @@ class VocabRushData:
                 combined_data[k] = v
 
         combined_data.pop("")
-        file_utils.save_json_data(file_utils.VOCAB_RUSH_DATA, combined_data)
+        data_utils.VocabRushData().save_data(combined_data)
 
         if debug_print:
             self.vocab_data.pop("")
@@ -156,7 +154,7 @@ def update_vocab_quiz_stats(correct_vocab, wrong_vocab):
         if vocab not in wrong_vocab and vocab != "":
             finalized_correct_vocab.append(vocab)
 
-    total_stats = file_utils.load_json(file_utils.VOCAB_STATS_DATA)
+    total_stats = data_utils.VocabStatsData().get_data()
 
     for v in finalized_correct_vocab:
         try:
@@ -177,7 +175,7 @@ def update_vocab_quiz_stats(correct_vocab, wrong_vocab):
     if PRINT_WRONG_VOCAB:
         print(wrong_vocab)
 
-    file_utils.save_json_data(file_utils.VOCAB_STATS_DATA, total_stats)
+    data_utils.VocabStatsData().save_data(total_stats)
 
 
 def find_word(book, word):
@@ -227,7 +225,7 @@ def update_vocab_uses_dict(vocab_uses_dict):
 
     vocab_uses_dict['books'] = read_books_list
     vocab_uses_dict['vocab'] = vocab_dict
-    file_utils.save_json_data(file_utils.VOCAB_USES_DATA, vocab_uses_dict)
+    data_utils.VocabUses().save_data(vocab_uses_dict)
 
 
 def is_end_char(c):
@@ -272,19 +270,19 @@ def update_sentences_dict(word_dict):
         sentences = find_sentences(word_dict, key)
         sentences_dict[key] = sentences
 
-    file_utils.save_json_data(file_utils.VOCAB_SENTENCES_DATA, sentences_dict)
+    data_utils.VocabSentences().save_data(sentences_dict)
     return sentences_dict
 
 
 def update_all():
-    vocab_uses_dict = file_utils.load_json(file_utils.VOCAB_USES_DATA)
+    vocab_uses_dict = data_utils.VocabUses().get_data()
     update_vocab_uses_dict(vocab_uses_dict)
     update_sentences_dict(vocab_uses_dict['vocab'])
 
 
 class VocabQuizGui(pyside_utils.QuizGui):
     def __init__(self, parent=None, number_of_vocab=-1, prioritize=False, save_stats=True):
-        self.vocab_stats = file_utils.load_json(file_utils.VOCAB_STATS_DATA)
+        self.vocab_stats = data_utils.VocabStatsData().get_data()
         super().__init__(parent, number_of_questions=number_of_vocab, prioritize=prioritize, save_stats=save_stats)
 
     def save_data(self, b_force=False):

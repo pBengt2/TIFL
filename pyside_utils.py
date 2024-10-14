@@ -8,8 +8,8 @@ from PySide6.QtWidgets import QGridLayout, QLabel, QLineEdit, QTextEdit, QListWi
 from PySide6.QtGui import QKeyEvent, Qt, QColor, QCursor, QAction
 from PySide6.QtCore import QAbstractTableModel, QEvent
 
-import file_utils as file_utils
-import jp_utils as jp_utils
+import data_utils
+import jp_utils
 
 JAPANESE_LOCALE_ID = 68224017
 ENGLISH_LOCALE_ID = 67699721
@@ -184,13 +184,6 @@ class QuizGui(VampaJpMainWidget):
 
         self.post_load()
 
-    @staticmethod
-    def load_data():
-        data = file_utils.load_json(file_utils.JSON_SAVED_DATA)
-        vocab_list = file_utils.read_key(data, "vocab_list", [])
-
-        return vocab_list
-
     def save_data(self, b_force=False):
         pass
 
@@ -262,13 +255,13 @@ class QuizGui(VampaJpMainWidget):
             self.quiz_problems.append([v, spellings])
 
     def setup_quiz(self):
-        question_list = self.load_data()
-        self.quiz_data = file_utils.load_json(file_utils.VOCAB_QUIZ_DATA)
+        question_list = data_utils.SavedData().get_vocab_list()
+        self.quiz_data = data_utils.VocabQuizData().get_data()
 
         self.setup_questions(question_list)
 
     def update_quiz_data(self):
-        question_list = self.load_data()
+        question_list = data_utils.VocabQuizData().get_data()
 
         keys = self.quiz_data.keys()
         for v in question_list:
@@ -277,7 +270,7 @@ class QuizGui(VampaJpMainWidget):
                 verb_type = str(jp_utils.get_verb_type(v))
                 self.quiz_data[v] = {'definitions': definitions, 'verb_type': verb_type}
 
-        file_utils.save_json_data(file_utils.VOCAB_QUIZ_DATA, self.quiz_data)
+        data_utils.VocabQuizData().save_data(self.quiz_data)
 
     def get_vocab_data(self, vocab):
         try:
@@ -620,15 +613,15 @@ class ClickableLabel(QLabel):
 
 # noinspection PyTypeChecker
 class MyListWidget(QListWidget):
-    def __init__(self, parent=None, directory_prefix="", file_type=".txt"):
+    def __init__(self, parent=None, saved_data=None, directory_prefix="", file_type=".txt"):
         super().__init__(parent)
         self.directory_prefix = directory_prefix
         self.file_type = file_type
-        self.parent_gui = parent  # TODO: using "self.parent_gui" is ugly IMO [use singleton for loaded json data...]
+        self.saved_data = saved_data
 
     def _get_read_status(self, filename):
-        book_index = self.parent_gui.get_book_index(filename)
-        book_total_chars = self.parent_gui.get_book_total_characters(filename)
+        book_index = self.saved_data.get_book_index(filename)
+        book_total_chars = self.saved_data.get_book_total_characters(filename)
 
         if book_index == 0:
             return 1

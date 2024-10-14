@@ -4,13 +4,6 @@ import shutil
 
 DEFAULT_TXT_FILE = r"dummy_input.txt"
 
-JSON_SAVED_DATA = r"Data/saved.json"  # 'book_dict' { 'filename' { 'index', 'total_chars', 'saved_chapter', 'saved_page' }: , vocab_list: [vocab], last_open_file: filename, last_date: date_string
-VOCAB_USES_DATA = r"Data/vocab_uses.json"  # 'books' : [book], 'vocab' : { filename : [index] }
-VOCAB_SENTENCES_DATA = r"Data/vocab_sentences.json"  # vocab : [sentences]
-VOCAB_QUIZ_DATA = r"Data/vocab_quiz.json"  # vocab : { 'definitions', 'verb_type' }
-VOCAB_STATS_DATA = r"Data/vocab_stats.json"  # 'vocab': { 'correct', 'incorrect', 'in_a_row' }
-VOCAB_RUSH_DATA = r"Data/vocab_rush.json"  # vocab: { 'correct', 'incorrect', 'in_a_row', 'last_date' }
-
 
 def change_current_directory(full_path):
     os.chdir(full_path)
