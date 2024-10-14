@@ -69,8 +69,8 @@ def move_files(directory, target_directory, file_extensions, ignore_files=None):
     to_move = get_file_list(directory, file_extensions)
     for fn in to_move:
         if fn.lower() not in updated_ignore_files:
-            cur_name = directory + "\\" + fn
-            dest_name = target_directory + "\\" + fn
+            cur_name = directory + "/" + fn
+            dest_name = target_directory + "/" + fn
             os.rename(cur_name, dest_name)
 
 

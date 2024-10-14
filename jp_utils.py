@@ -67,6 +67,25 @@ def get_definitions(word, num_definitions=3, basic=True, recursive_call=False):
     return results
 
 
+"""
+    # [old] Locally modified nhk.download_top_news
+    def download_top_news(self, furigana=True, html_output=False, mp3=True, text=True):
+        for news in self.top_news:
+            [id_, dttm, title] = [
+                news[a] for a in ("news_id", "news_prearranged_time", "title")
+            ]
+            fn = dttm.split(" ")[0] + "-" + title
+            fn = fn.replace('\u3000', " ")
+            if not os.path.exists("News/" + fn + ".txt"):
+                article = Article(id_)
+                logger.info("Downloading: " + title)
+                text = self.safe_str(article.get_text(furigana, html_output))
+                with codecs.open("News/" + fn + ".txt", "w", "utf-8") as f:
+                    f.write(text)
+                time.sleep(0.5)
+"""
+
+
 def download_nhk_news():
     # TODO: Should see if nhk api will allow some changes
     #   - Output directory
@@ -75,7 +94,7 @@ def download_nhk_news():
     # Current workaround is to change directory and change back.
 
     cur_dir = file_utils.get_current_directory()  # workaround
-    file_utils.change_current_directory(cur_dir + "\\News")  # workaround
+    file_utils.change_current_directory(cur_dir + "/News")  # workaround
     nhk.download_top_news(furigana=False, html_output=False, mp3=False, text=True)
     file_utils.change_current_directory(cur_dir)  # workaround
 

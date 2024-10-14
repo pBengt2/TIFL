@@ -27,6 +27,10 @@ def change_to_japanese():
     pyautogui.keyUp('enter')  # Ugly hack...
 
 
+def change_to_english():
+    pwkl.change_foreground_window_keyboard_layout(ENGLISH_LOCALE_ID)
+
+
 class VampaJpMainWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -448,10 +452,6 @@ class VocabTableModel(QAbstractTableModel):
             return 0
 
 
-def change_to_english():
-    pwkl.change_foreground_window_keyboard_layout(ENGLISH_LOCALE_ID)
-
-
 class MyColors(QColor):
     def __init__(self, r, g, b):
         super().__init__(r, g, b)
@@ -490,9 +490,9 @@ class MyListWidgetItem(QListWidgetItem):
         if self.read_status == 1:
             self.setForeground(COLORS.BRIGHT_TEXT)
         elif self.read_status == 0:
-            self.setForeground(COLORS.DARK_TEXT)
-        else:
             self.setForeground(COLORS.SECONDARY_TEXT)
+        else:
+            self.setForeground(COLORS.DARK_TEXT)
 
 
 # TODO: Zoom for non-aspect ratio images... T_T
@@ -624,7 +624,18 @@ class MyListWidget(QListWidget):
         super().__init__(parent)
         self.directory_prefix = directory_prefix
         self.file_type = file_type
-        self.parent_gui = parent  # TODO: using "self.parent_gui" is ugly IMO
+        self.parent_gui = parent  # TODO: using "self.parent_gui" is ugly IMO [use singleton for loaded json data...]
+
+    def _get_read_status(self, filename):
+        book_index = self.parent_gui.get_book_index(filename)
+        book_total_chars = self.parent_gui.get_book_total_characters(filename)
+
+        if book_index == 0:
+            return 1
+        elif book_index >= book_total_chars - 1:
+            return 2
+        else:
+            return 0
 
     def refresh_list(self):
         try:
@@ -638,31 +649,11 @@ class MyListWidget(QListWidget):
                     item = MyListWidgetItem(f)
 
                     filename = self.directory_prefix + str(item.text())
-                    book_index = self.parent_gui.get_book_index(filename)
-                    book_total_chars = self.parent_gui.get_book_total_characters(filename)
-                    if book_index == 0:
-                        item.set_read_status(1)
-                    elif book_index == book_total_chars:
-                        item.set_read_status(2)
-                    else:
-                        item.set_read_status(0)
+                    item.set_read_status(self._get_read_status(filename))
 
                     self.addItem(item)
 
         self.sortItems()
-
-        for i in range(self.count()):
-            item = self.item(i)
-
-            filename = self.directory_prefix + str(item.text())
-            book_index = self.parent_gui.get_book_index(filename)
-            book_total_chars = self.parent_gui.get_book_total_characters(filename)
-            if book_index == 0:
-                item.setForeground(COLORS.BRIGHT_TEXT)
-            elif book_index == book_total_chars:
-                item.setForeground(COLORS.DARK_TEXT)
-            else:
-                item.setForeground(COLORS.SECONDARY_TEXT)
 
 
 class COLORS:

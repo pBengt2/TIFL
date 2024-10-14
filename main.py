@@ -23,6 +23,7 @@ import pyside_utils
 # TODO: Mid Priority
 # - Should add version numbers to json data.
 # - Settings page in GUI
+# - Dynamic UI (ie, drag for sizes.
 
 # TODO: Low Priority
 # - (Minor feature): Right click to copy text.
@@ -152,6 +153,9 @@ class MainGui(pyside_utils.VampaJpMainWidget):
         self.log_tab = QWidget(self)
         self.log_layout = QGridLayout(self.log_tab)
         self.log_field = QTextEdit(self)
+
+        self.settings_tab = QWidget(self)
+        self.settings_layout = QGridLayout(self.settings_tab)
 
         self.current_txt_file = None
         self.current_manga_directory = None
@@ -296,6 +300,9 @@ class MainGui(pyside_utils.VampaJpMainWidget):
         self.log_field.setHtml('')
         pyside_utils.set_font_size(self.log_field, 16)
 
+    def _setup_settings_tab(self):
+        self.settings_tab.setLayout(self.settings_layout)
+
     def _setup_tabs(self):
         self.tabs.currentChanged.connect(self.tab_changed)
         self.tabs.setTabPosition(QTabWidget.TabPosition.West)
@@ -307,6 +314,7 @@ class MainGui(pyside_utils.VampaJpMainWidget):
         self._setup_books_tab()
         self._setup_manga_tab()
         self._setup_log_tab()
+        self._setup_settings_tab()
 
         self.tabs.addTab(self.reading_tab, "read")
         self.tabs.addTab(self.vocab_tab, "vocab")
@@ -314,6 +322,7 @@ class MainGui(pyside_utils.VampaJpMainWidget):
         self.tabs.addTab(self.books_tab, "books")
         self.tabs.addTab(self.manga_tab, "manga")
         self.tabs.addTab(self.log_tab, "log")
+        self.tabs.addTab(self.settings_tab, "settings")
 
     def _setup_text(self):
         self.text_buffer = file_utils.read_txt_file(self.current_txt_file)
@@ -415,6 +424,8 @@ class MainGui(pyside_utils.VampaJpMainWidget):
     def find_current_sentence_index(self):
         try:
             index = self.buffer_index
+            if index >= len(self.text_buffer) - 1:
+                return len(self.text_buffer)
             while index > 0 and self.text_buffer[index-1] != '。':
                 index -= 1
         except IndexError:
@@ -625,7 +636,7 @@ class MainGui(pyside_utils.VampaJpMainWidget):
     def manga_selection_changed(self):
         items = self.manga_field.selectedItems()
         for item in items:
-            manga_directory = "Manga\\" + item.text()
+            manga_directory = "Manga/" + item.text()
             self.manga_page = 0
             self.manga_chapter = 0
             self._manga_changed(manga_directory)
@@ -882,7 +893,7 @@ class MainGui(pyside_utils.VampaJpMainWidget):
             self.vocab_model.add_vocab("Empty")
 
     def set_current_txt_file(self, file_path=""):
-        self.current_txt_file = file_path.replace("/", "\\")
+        self.current_txt_file = file_path.replace("\\", "/")
 
     def tab_changed(self):
         self.save_data()
@@ -903,9 +914,9 @@ class MainGui(pyside_utils.VampaJpMainWidget):
         if self.text_field_i1 > self.buffer_index:
             self.text_field_i1 = self.buffer_index
         if self.manga_mode:
-            self.bottom_left_text.setText(self.current_manga_directory.split("\\")[-2] + " " + str(self.manga_chapter) + "/" + str(self.total_manga_chapters) + " " + str(self.manga_page) + "/" + str(self.total_manga_pages))
+            self.bottom_left_text.setText(self.current_manga_directory.split("/")[-2] + " " + str(self.manga_chapter) + "/" + str(self.total_manga_chapters) + " " + str(self.manga_page) + "/" + str(self.total_manga_pages))
         else:
-            self.bottom_left_text.setText(self.current_txt_file.split("\\")[-1].split(".")[0][0:30] + ": " + str(self.buffer_index) + r'/' + str(len(self.text_buffer)))
+            self.bottom_left_text.setText(self.current_txt_file.split("/")[-1].split(".")[0][0:30] + ": " + str(self.buffer_index) + r'/' + str(len(self.text_buffer)))
 
     def input_line_is_changed(self):
         self.compare_text()
@@ -994,7 +1005,7 @@ class MainGui(pyside_utils.VampaJpMainWidget):
         else:
             self.set_current_txt_file(last_file)
 
-        self.buffer_index = file_utils.read_key(data, self.current_txt_file, 0)
+        self.buffer_index = file_utils.read_key(file_utils.read_key(self.book_dict, self.current_txt_file, {}), "index", 0)
 
         if file_utils.read_key(data, "last_date", "") != str(date.today()):
             jp_utils.download_nhk_news()
@@ -1008,7 +1019,7 @@ class MainGui(pyside_utils.VampaJpMainWidget):
     def save_data(self, b_force=False):
         if self.data_stale or b_force:
             if self.current_txt_file is not None:
-                self.book_dict[self.current_txt_file] = {
+                self.book_dict[self.current_txt_file.replace("\\", "/")] = {
                     "index": self.find_current_sentence_index(),
                     "total_chars": self.get_current_book_character_count()
                 }
