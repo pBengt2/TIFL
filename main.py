@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import QApplication, QWidget, QTextEdit, QGridLayout, QPushButton, QInputDialog, QLabel, QTabWidget, QHeaderView
 from PySide6.QtGui import QTextCursor, Qt, QPixmap
-from datetime import date, timedelta
+from datetime import date
 import sys
 import random
 import os
@@ -55,39 +55,13 @@ import vocab_utils
 
 DEFAULT_BLACK_IMG = r"black.png"  # Dummy image for consistent page layout.
 
-MANGA_VIEWER_DUAL_PANEL_MODE = True  # TODO: Settings panel
-MANGA_VIEWER_WIDTH = 900  # 540  # 900  # 1800  # TODO: Settings panel
-MANGA_VIEWER_HEIGHT = 1333  # 800  # 1333  # 2000  # TODO: Settings panel
-
-WINDOW_SIZE = 2  # TODO: Settings panel
-if WINDOW_SIZE == 0:
-    TEXT_FIELD_MAX_TEXT = 80
-    TEXT_FIELD_BUFFER_ROOM = 20
-    READING_LAYOUT_ROW_TEXT_MIN_HEIGHT = 320
-    READING_LAYOUT_ROW_INPUT_MIN_HEIGHT = 128
-    READING_LAYOUT_COL_ZERO_MIN_WIDTH = 900
-    READING_LAYOUT_COL_ONE_MIN_WIDTH = 512
-elif WINDOW_SIZE == 1:
-    TEXT_FIELD_MAX_TEXT = 150
-    TEXT_FIELD_BUFFER_ROOM = 30
-    READING_LAYOUT_ROW_TEXT_MIN_HEIGHT = 550
-    READING_LAYOUT_ROW_INPUT_MIN_HEIGHT = 128
-    READING_LAYOUT_COL_ZERO_MIN_WIDTH = 1024
-    READING_LAYOUT_COL_ONE_MIN_WIDTH = 512
-elif WINDOW_SIZE == 2:
-    TEXT_FIELD_MAX_TEXT = 276
-    TEXT_FIELD_BUFFER_ROOM = 30
-    READING_LAYOUT_ROW_TEXT_MIN_HEIGHT = 1100
-    READING_LAYOUT_ROW_INPUT_MIN_HEIGHT = 128
-    READING_LAYOUT_COL_ZERO_MIN_WIDTH = 900
-    READING_LAYOUT_COL_ONE_MIN_WIDTH = 512
-
 
 class MainGui(pyside_utils.VampaJpMainWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
 
         # Data
+        self.main_settings = data_utils.MainSettings()
         self.saved_data = data_utils.SavedData()
         self.data_stale = False
         self.vocab_stats = data_utils.VocabStatsData().get_data()
@@ -97,8 +71,6 @@ class MainGui(pyside_utils.VampaJpMainWidget):
         self.buffer_index = 0
         self.text_buffer = ""
         self.text_field_i1 = 0
-        self.text_field_max_text = TEXT_FIELD_MAX_TEXT
-        self.text_field_buffer_room = TEXT_FIELD_BUFFER_ROOM
         self.previous_selected_text = ""
         self.current_showing_word = ""
         self.selection_size = 0  # Only relevant for keyboard hotkeys
@@ -127,11 +99,11 @@ class MainGui(pyside_utils.VampaJpMainWidget):
         self.input_line = pyside_utils.InputLineEdit(self)
         self.definition_field = QTextEdit(self)
         self.bottom_left_text = QLabel(self)
-        if MANGA_VIEWER_DUAL_PANEL_MODE:
-            self.reading_img_lbl_left = pyside_utils.ClickableLabel(self, self.left_img_clicked, MANGA_VIEWER_WIDTH, MANGA_VIEWER_HEIGHT)
-            self.reading_img_lbl_right = pyside_utils.ClickableLabel(self, self.right_img_clicked, MANGA_VIEWER_WIDTH, MANGA_VIEWER_HEIGHT)
+        if self.main_settings.view_dual_panel_manga():
+            self.reading_img_lbl_left = pyside_utils.ClickableLabel(self, self.left_img_clicked, self.main_settings.get_manga_viewer_width(), self.main_settings.get_manga_viewer_height())
+            self.reading_img_lbl_right = pyside_utils.ClickableLabel(self, self.right_img_clicked, self.main_settings.get_manga_viewer_width(), self.main_settings.get_manga_viewer_height())
         else:
-            self.reading_img_lbl_left = pyside_utils.ClickableLabel(self, self.left_img_clicked, MANGA_VIEWER_WIDTH * 2, MANGA_VIEWER_HEIGHT)
+            self.reading_img_lbl_left = pyside_utils.ClickableLabel(self, self.left_img_clicked, self.main_settings.get_manga_viewer_width() * 2, self.main_settings.get_manga_viewer_height())
 
         self.main_layout = QGridLayout(self)
         self.tabs = QTabWidget(self)
@@ -171,7 +143,7 @@ class MainGui(pyside_utils.VampaJpMainWidget):
         self.log_field = QTextEdit(self)
 
         self.settings_tab = QWidget(self)
-        self.settings_layout = QGridLayout(self.settings_tab)
+        self.settings_layout = pyside_utils.JsonLayout(self.settings_tab)
 
         # Current state...
         self.current_txt_file = None
@@ -199,7 +171,7 @@ class MainGui(pyside_utils.VampaJpMainWidget):
         self.btn_set_location.setText("Set Location")
         self.btn_set_location.clicked.connect(self.set_location_clicked)
         cur_row = 0
-        if MANGA_VIEWER_DUAL_PANEL_MODE:
+        if self.main_settings.view_dual_panel_manga():
             self.reading_layout.addWidget(self.reading_img_lbl_left, cur_row, 0)
             self.reading_layout.addWidget(self.reading_img_lbl_right, cur_row, 1)
         else:
@@ -216,10 +188,10 @@ class MainGui(pyside_utils.VampaJpMainWidget):
         self.reading_layout.addWidget(self.bottom_left_text, cur_row, 0)
 
         self.reading_layout.setRowMinimumHeight(0, 0)
-        self.reading_layout.setRowMinimumHeight(1, READING_LAYOUT_ROW_TEXT_MIN_HEIGHT)
-        self.reading_layout.setRowMinimumHeight(2, READING_LAYOUT_ROW_INPUT_MIN_HEIGHT)
-        self.reading_layout.setColumnMinimumWidth(0, READING_LAYOUT_COL_ZERO_MIN_WIDTH)
-        self.reading_layout.setColumnMinimumWidth(1, READING_LAYOUT_COL_ONE_MIN_WIDTH)
+        self.reading_layout.setRowMinimumHeight(1, self.main_settings.get_reading_min_height())  # 320 -> 1100
+        self.reading_layout.setRowMinimumHeight(2, self.main_settings.get_reading_input_min_height())  # 128
+        self.reading_layout.setColumnMinimumWidth(0, self.main_settings.get_reading_min_width())
+        self.reading_layout.setColumnMinimumWidth(1, self.main_settings.get_reading_definitions_width())
         self.reading_layout.setColumnStretch(0, 1)
         self.reading_layout.setColumnStretch(1, 0)
         self.reading_layout.setColumnStretch(2, 0)
@@ -317,7 +289,8 @@ class MainGui(pyside_utils.VampaJpMainWidget):
         pyside_utils.set_font_size(self.log_field, 16)
 
     def _setup_settings_tab(self):
-        self.settings_tab.setLayout(self.settings_layout)
+        #self.settings_tab.setLayout(self.settings_layout)
+        pass
 
     def _setup_tabs(self):
         self.tabs.currentChanged.connect(self.tab_changed)
@@ -343,9 +316,15 @@ class MainGui(pyside_utils.VampaJpMainWidget):
     def _setup_text(self):
         self.text_buffer = file_utils.read_txt_file(self.current_txt_file)
 
+    def _get_max_text(self):
+        max_text = self.main_settings.get_text_field_max_text()
+        if self.manga_mode:
+            return int(max_text / 2)
+        return max_text
+
     def _setup_text_field(self):
         self.text_field.setReadOnly(True)
-        self.text_field.setHtml('<font color="blue">' + self.text_buffer[self.text_field_i1:self.text_field_max_text] + '</font>')
+        self.text_field.setHtml('<font color="blue">' + self.text_buffer[self.text_field_i1:self._get_max_text()] + '</font>')
         pyside_utils.set_font_size(self.text_field, 32)
         self.text_field.selectionChanged.connect(self.text_selected)
 
@@ -396,18 +375,16 @@ class MainGui(pyside_utils.VampaJpMainWidget):
     """************************************** READING **************************************"""
     def _refresh_reading_layout(self):
         if self.manga_mode:
-            self.reading_layout.setRowMinimumHeight(0, MANGA_VIEWER_HEIGHT)
-            self.reading_layout.setRowMinimumHeight(1, int(READING_LAYOUT_ROW_TEXT_MIN_HEIGHT / 2))
+            self.reading_layout.setRowMinimumHeight(0, self.main_settings.get_manga_viewer_height())
+            self.reading_layout.setRowMinimumHeight(1, int(self.main_settings.get_reading_min_height() / 2))
             self.reading_layout.itemAt(0).widget().show()
             self.reading_layout.itemAt(1).widget().show()
-            self.text_field_max_text = int(TEXT_FIELD_MAX_TEXT / 2)
         if not self.manga_mode:
             self.reading_layout.setRowMinimumHeight(0, 0)
-            self.reading_layout.setRowMinimumHeight(1, READING_LAYOUT_ROW_TEXT_MIN_HEIGHT)
+            self.reading_layout.setRowMinimumHeight(1, self.main_settings.get_reading_min_height())
             self.reading_layout.itemAt(0).widget().hide()
-            if MANGA_VIEWER_DUAL_PANEL_MODE:
+            if self.main_settings.view_dual_panel_manga():
                 self.reading_layout.itemAt(1).widget().hide()
-            self.text_field_max_text = TEXT_FIELD_MAX_TEXT
 
     def set_location(self, new_index):
         if new_index is None or new_index < 0:
@@ -416,7 +393,7 @@ class MainGui(pyside_utils.VampaJpMainWidget):
             print("new location past end of file...")
             return
 
-        self.text_field_i1 = max(new_index - self.text_field_buffer_room, 0)
+        self.text_field_i1 = max(new_index - self.main_settings.get_text_field_buffer_room(), 0)
         self.buffer_index = new_index
         self.data_stale = True
         self.refresh_text_display()
@@ -509,7 +486,7 @@ class MainGui(pyside_utils.VampaJpMainWidget):
         self.total_manga_pages = self.get_number_manga_pages()
 
     def left_img_clicked(self, right_half=False):
-        if MANGA_VIEWER_DUAL_PANEL_MODE and self.manga_page_right_panel == self.manga_page:
+        if self.main_settings.view_dual_panel_manga() and self.manga_page_right_panel == self.manga_page:
             new_page = self.manga_page + 2
             self._change_manga_page(self.manga_chapter, new_page)
         else:
@@ -526,14 +503,14 @@ class MainGui(pyside_utils.VampaJpMainWidget):
             self._change_manga_page(self.manga_chapter, new_page)
 
     def _change_manga_img(self, left_file, right_file=None):
-        if MANGA_VIEWER_DUAL_PANEL_MODE:
+        if self.main_settings.view_dual_panel_manga():
             pixmap = QPixmap(left_file)
-            self.reading_img_lbl_left.setPixmap(pixmap.scaled(MANGA_VIEWER_WIDTH, MANGA_VIEWER_HEIGHT, aspectMode=Qt.AspectRatioMode.KeepAspectRatio))
+            self.reading_img_lbl_left.setPixmap(pixmap.scaled(self.main_settings.get_manga_viewer_width(), self.main_settings.get_manga_viewer_height(), aspectMode=Qt.AspectRatioMode.KeepAspectRatio))
             pm2 = QPixmap(right_file)
-            self.reading_img_lbl_right.setPixmap(pm2.scaled(MANGA_VIEWER_WIDTH, MANGA_VIEWER_HEIGHT, aspectMode=Qt.AspectRatioMode.KeepAspectRatio))
+            self.reading_img_lbl_right.setPixmap(pm2.scaled(self.main_settings.get_manga_viewer_width(), self.main_settings.get_manga_viewer_height(), aspectMode=Qt.AspectRatioMode.KeepAspectRatio))
         else:
             pixmap = QPixmap(left_file)
-            self.reading_img_lbl_left.setPixmap(pixmap.scaled(MANGA_VIEWER_WIDTH*2, MANGA_VIEWER_HEIGHT, aspectMode=Qt.AspectRatioMode.KeepAspectRatio))
+            self.reading_img_lbl_left.setPixmap(pixmap.scaled(self.main_settings.get_manga_viewer_width()*2, self.main_settings.get_manga_viewer_height(), aspectMode=Qt.AspectRatioMode.KeepAspectRatio))
             if right_file is not None:
                 print("Sent 2 images during single panel mode...")
 
@@ -565,7 +542,7 @@ class MainGui(pyside_utils.VampaJpMainWidget):
         txt_file = file_utils.get_file_list(txt_directory, ".txt")[self.manga_page]
         self.change_txt_file(os.path.join(txt_directory, txt_file))
 
-        if MANGA_VIEWER_DUAL_PANEL_MODE:
+        if self.main_settings.view_dual_panel_manga():
             if self.manga_page_right_panel + 1 >= len(img_files):
                 img_file_left = DEFAULT_BLACK_IMG
             else:
@@ -613,7 +590,7 @@ class MainGui(pyside_utils.VampaJpMainWidget):
 
         self.manga_page = page
 
-        if MANGA_VIEWER_DUAL_PANEL_MODE:
+        if self.main_settings.view_dual_panel_manga():
             if self.manga_page % 2 == 0:
                 self.manga_page_right_panel = self.manga_page
                 self.reading_img_lbl_left.setStyleSheet("border: 0px solid black;")
@@ -904,12 +881,12 @@ class MainGui(pyside_utils.VampaJpMainWidget):
     def refresh_text_display(self):
         self._refresh_buffer()
         gray_text = '<font color="gray">' + self.text_buffer[self.text_field_i1:self.buffer_index] + '</font>'
-        blue_text = '<font color="blue">' + self.text_buffer[self.buffer_index:self.text_field_max_text + self.text_field_i1] + '</font>'
+        blue_text = '<font color="blue">' + self.text_buffer[self.buffer_index:self._get_max_text() + self.text_field_i1] + '</font>'
         self.text_field.setHtml(gray_text + blue_text)
 
     def _refresh_buffer(self):
-        if self.buffer_index >= self.text_field_i1 + self.text_field_max_text - self.text_field_buffer_room:
-            self.text_field_i1 = self.buffer_index - self.text_field_buffer_room
+        if self.buffer_index >= self.text_field_i1 + self._get_max_text() - self.main_settings.get_text_field_buffer_room():
+            self.text_field_i1 = self.buffer_index - self.main_settings.get_text_field_buffer_room()
         if self.text_field_i1 > self.buffer_index:
             self.text_field_i1 = self.buffer_index
         if self.manga_mode:

@@ -40,6 +40,57 @@ class MainSettings(JsonSingleton):
         super().__init__()
         self.json_file = _SETTINGS_DATA
 
+    def get_data(self):
+        if self._data is None:
+            self._data = file_utils.load_json(self.json_file)
+            if self._data == {}:
+                self._data['window_width'] = 1024
+                self._data['window_height'] = 1024
+                self._data['view_dual_panel_manga'] = True
+        return self._data
+
+    def get_window_width(self):
+        return file_utils.read_key(self.get_data(), "window_width", 1024)
+
+    def get_window_height(self):
+        return file_utils.read_key(self.get_data(), "window_height", 1024)
+
+    def view_dual_panel_manga(self):
+        # TODO: This can be automatically handled based on window dimensions and image aspect ratio.
+        return file_utils.read_key(self.get_data(), "view_dual_panel_manga", True)
+
+    def get_reading_min_height(self):
+        return min(max(320, int(self.get_window_height() * .75)), 1100)  # TODO: arbitrary
+
+    def get_text_field_buffer_room(self):
+        chars_per_row = int(self.get_reading_min_width() / 30)
+        return chars_per_row + 3  # TODO: Arbitrary (before finishing second to last line...)
+
+    def get_text_field_max_text(self):
+        chars_per_row = int(self.get_reading_min_width() / 30)  # TODO: just an estimate. Should check text size...
+        num_rows = int(self.get_reading_min_height() / 65)
+        return chars_per_row * num_rows
+
+    @staticmethod
+    def get_manga_viewer_width():
+        return 900  # TODO: arbitrary
+
+    @staticmethod
+    def get_manga_viewer_height():
+        return 1333  # TODO: arbitrary
+
+    @staticmethod
+    def get_reading_input_min_height():
+        return 128  # TODO: arbitrary
+
+    @staticmethod
+    def get_reading_min_width():
+        return 900  # TODO: arbitrary
+
+    @staticmethod
+    def get_reading_definitions_width():
+        return 512  # TODO: arbitrary
+
 
 class VocabUses(JsonSingleton):
     def __init__(self):
