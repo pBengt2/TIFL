@@ -31,7 +31,7 @@ class JsonSingleton(metaclass=Singleton):
         return self._data
 
     def save_data(self, data):
-        # TODO: saved_data is not always in sync with saved data. Subclasses should handle their cases...
+        self._data = data
         file_utils.save_json_data(self.json_file, data)
 
 
@@ -131,7 +131,29 @@ class SavedData(JsonSingleton):
         super().__init__()
         self.json_file = _JSON_SAVED_DATA
         self._book_dict = None
-        self.vocab_list = None
+        self._vocab_list = None
+
+    def save_data(self, data):
+        # TODO: This is getting called way too often...
+        self._data = data
+        self._book_dict = file_utils.read_key(self.get_data(), "book_dict", {})
+        self._vocab_list = file_utils.read_key(self.get_data(), "vocab_list", {})
+        file_utils.save_json_data(self.json_file, data)
+
+    def add_vocab(self, word):
+        if len(word) > 0:
+            if word not in self._vocab_list:
+                self._vocab_list.append(word)
+                return True
+        return False
+
+    def remove_vocab(self, word):
+        try:
+            if len(word) > 0:
+                self._vocab_list.remove(word)
+                return True
+        except ValueError:
+            return False
 
     def get_book_dict(self):
         if self._book_dict is None:
@@ -139,9 +161,10 @@ class SavedData(JsonSingleton):
         return self._book_dict
 
     def get_vocab_list(self):
-        if self.vocab_list is None:
-            self.vocab_list = file_utils.read_key(self.get_data(), "vocab_list", {})
-        return self.vocab_list
+        if self._vocab_list is None:
+            self._vocab_list = file_utils.read_key(self.get_data(), "vocab_list", {})
+            # random.shuffle(self.vocab_list)
+        return self._vocab_list
 
     def get_book_index(self, book_title):
         book_info = file_utils.read_key(self.get_book_dict(), book_title, {})
@@ -150,6 +173,17 @@ class SavedData(JsonSingleton):
     def get_book_total_characters(self, book_title):
         book_info = file_utils.read_key(self.get_book_dict(), book_title, {})
         return file_utils.read_key(book_info, "total_chars", 0)
+
+    def get_book_read_status(self, filename):
+        book_index = self.get_book_index(filename)
+        book_total_chars = self.get_book_total_characters(filename)
+
+        if book_index == 0:
+            return 1
+        elif book_index >= book_total_chars - 1:
+            return 2
+        else:
+            return 0
 
     def get_manga_chapter(self, manga_title):
         book_info = file_utils.read_key(self.get_book_dict(), manga_title, {})

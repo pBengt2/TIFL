@@ -128,15 +128,15 @@ class MainGui(pyside_utils.VampaJpMainWidget):
 
         self.news_tab = QWidget(self)
         self.news_layout = QGridLayout(self.news_tab)
-        self.news_field = pyside_utils.MyListWidget(parent=self, saved_data=self.saved_data, directory_prefix=r"News/")
+        self.news_field = pyside_utils.MyListWidget(parent=self, directory_prefix=r"News/")
 
         self.books_tab = QWidget(self)
         self.books_layout = QGridLayout(self.books_tab)
-        self.books_field = pyside_utils.MyListWidget(parent=self, saved_data=self.saved_data, directory_prefix=r"LN/")
+        self.books_field = pyside_utils.MyListWidget(parent=self, directory_prefix=r"LN/")
 
         self.manga_tab = QWidget(self)
         self.manga_layout = QGridLayout(self.manga_tab)
-        self.manga_field = pyside_utils.MyListWidget(parent=self, saved_data=self.saved_data, directory_prefix=r"Manga/", file_type="dir")
+        self.manga_field = pyside_utils.MyListWidget(parent=self, directory_prefix=r"Manga/", file_type="dir")
 
         self.log_tab = QWidget(self)
         self.log_layout = QGridLayout(self.log_tab)
@@ -148,9 +148,6 @@ class MainGui(pyside_utils.VampaJpMainWidget):
         # Current state...
         self.current_txt_file = None
         self.current_manga_directory = None
-
-        self.vocab_list = []  # TODO: delete
-        self.vocab_sentences = {}  # TODO: delete
 
         self._setup_helper()
 
@@ -289,7 +286,8 @@ class MainGui(pyside_utils.VampaJpMainWidget):
         pyside_utils.set_font_size(self.log_field, 16)
 
     def _setup_settings_tab(self):
-        #self.settings_tab.setLayout(self.settings_layout)
+        # TODO: Settings tab...
+        # self.settings_tab.setLayout(self.settings_layout)
         pass
 
     def _setup_tabs(self):
@@ -639,11 +637,9 @@ class MainGui(pyside_utils.VampaJpMainWidget):
         self.vocab_model.sort_by_column(indices[0].column())
 
     def add_vocab(self, word):
-        if len(word) > 0:
-            if word not in self.vocab_list:
-                self.vocab_list.append(word)
-                self.vocab_model.add_vocab(word)
-                self.save_data(True)
+        if self.saved_data.add_vocab(word):
+            self.vocab_model.add_vocab(word)
+            self.save_data(True)  # TODO: Should be handled in SavedData.add_vocab()
 
     def save_vocab_clicked(self):
         self.add_vocab(self.text_field.textCursor().selectedText())
@@ -659,9 +655,8 @@ class MainGui(pyside_utils.VampaJpMainWidget):
             selected_vocab.append(v)
 
         for v in selected_vocab:
-            if len(v) > 0:
-                self.vocab_list.remove(v)
-                self.save_data(True)
+            if self.saved_data.remove_vocab(v):
+                self.save_data(True)  # TODO: Should be handled in SavedData.remove_vocab()
                 self.vocab_model.remove_vocab(v)
                 self.refresh_vocab_table()
                 return
@@ -847,7 +842,7 @@ class MainGui(pyside_utils.VampaJpMainWidget):
 
     def refresh_vocab_table(self):
         self.vocab_model.clear_data()
-        for v in self.vocab_list:
+        for v in self.saved_data.get_vocab_list():
             if not self.vocab_list_filter or self.vocab_list_filter in v:
                 try:
                     correct = self.vocab_stats[v]["correct"]
@@ -969,7 +964,6 @@ class MainGui(pyside_utils.VampaJpMainWidget):
         self._change_manga_page(chapter, page)
 
     def load_data(self):
-        self.vocab_list = self.saved_data.get_vocab_list()
         self.manga_mode = self.saved_data.was_manga_open()  # TODO: Manga should be it's own tab...
 
         last_file = self.saved_data.get_last_open_file()
@@ -984,10 +978,8 @@ class MainGui(pyside_utils.VampaJpMainWidget):
         if self.saved_data.get_saved_date() != str(date.today()):
             jp_utils.download_nhk_news()
 
-        random.shuffle(self.vocab_list)
         self.refresh_vocab_table()
 
-        self.vocab_sentences = data_utils.VocabSentences().get_data()
         self.vocab_rush_data = vocab_utils.VocabRushData()
 
     def save_data(self, b_force=False):
@@ -1019,7 +1011,7 @@ class MainGui(pyside_utils.VampaJpMainWidget):
 
             data = {
                 "book_dict": pruned_book_dict,
-                "vocab_list": self.vocab_list,
+                "vocab_list": self.saved_data.get_vocab_list(),
                 "last_open_file": last_file,
                 "last_file_manga": self.manga_mode,
                 "last_manga_directory": self.current_manga_directory,

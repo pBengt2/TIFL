@@ -669,22 +669,10 @@ class ClickableLabel(QLabel):
 
 # noinspection PyTypeChecker
 class MyListWidget(QListWidget):
-    def __init__(self, parent=None, saved_data=None, directory_prefix="", file_type=".txt"):
+    def __init__(self, parent=None, directory_prefix="", file_type=".txt"):
         super().__init__(parent)
         self.directory_prefix = directory_prefix
         self.file_type = file_type
-        self.saved_data = saved_data
-
-    def _get_read_status(self, filename):
-        book_index = self.saved_data.get_book_index(filename)
-        book_total_chars = self.saved_data.get_book_total_characters(filename)
-
-        if book_index == 0:
-            return 1
-        elif book_index >= book_total_chars - 1:
-            return 2
-        else:
-            return 0
 
     def refresh_list(self):
         try:
@@ -694,13 +682,14 @@ class MyListWidget(QListWidget):
         for f in dir_list:
             file_path = os.path.join(self.directory_prefix, f)
             if f.endswith(self.file_type) or (self.file_type == "dir" and os.path.isdir(file_path)):
-                if not self.findItems(f, Qt.MatchFlag.MatchExactly):
+                item = self.findItems(f, Qt.MatchFlag.MatchExactly)
+                if not item:
                     item = MyListWidgetItem(f)
-
-                    filename = self.directory_prefix + str(item.text())
-                    item.set_read_status(self._get_read_status(filename))
-
                     self.addItem(item)
+                else:
+                    item = item[0]
+                filename = self.directory_prefix + str(item.text())
+                item.set_read_status(data_utils.SavedData().get_book_read_status(filename))
 
         self.sortItems()
 
