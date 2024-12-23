@@ -133,8 +133,44 @@ class SavedData(JsonSingleton):
         self._book_dict = None
         self._vocab_list = None
 
+    def update_saved_data(self, current_txt_file=None, current_sentence_index=0, current_book_character_count=0, current_manga_directory=None, manga_chapter=0, manga_page=0, manga_mode=False):
+        if current_txt_file is not None:
+            self._book_dict[current_txt_file.replace("\\", "/")] = {
+                "index": current_sentence_index,
+                "total_chars": current_book_character_count
+            }
+
+        if current_manga_directory:
+            self._book_dict[current_manga_directory] = {
+                "saved_chapter": manga_chapter,
+                "saved_page": manga_page
+            }
+
+        # TODO: can't remember why this code was added in the first place...
+        #   Commenting out for now... remove if no issues arise.
+        """
+        pruned_book_dict = updated_book_dict.copy()
+        key_list = [k for k in pruned_book_dict.keys()]
+        for key in key_list:
+            if key is not None and key.startswith("TEMP"):
+                pruned_book_dict.pop(key)
+        """
+
+        last_file = current_txt_file
+        if manga_mode:
+            last_file = current_manga_directory
+
+        data = {
+            "book_dict": self._book_dict,
+            "vocab_list": self._vocab_list,
+            "last_open_file": last_file,
+            "last_file_manga": manga_mode,
+            "last_manga_directory": current_manga_directory,
+            "last_date": str(date.today())
+        }
+        self.save_data(data)
+
     def save_data(self, data):
-        # TODO: This is getting called way too often...
         self._data = data
         self._book_dict = file_utils.read_key(self.get_data(), "book_dict", {})
         self._vocab_list = file_utils.read_key(self.get_data(), "vocab_list", {})
@@ -144,6 +180,7 @@ class SavedData(JsonSingleton):
         if len(word) > 0:
             if word not in self._vocab_list:
                 self._vocab_list.append(word)
+                self.update_saved_data()
                 return True
         return False
 
@@ -200,5 +237,7 @@ class SavedData(JsonSingleton):
         return file_utils.read_key(self.get_data(), "last_date", str(date.today() - timedelta(days=1)))
 
     def was_manga_open(self):
-        # TODO: Manga should be it's own tab...
         return file_utils.read_key(self.get_data(), "last_file_manga", False)
+
+    def get_last_manga_directory(self):
+        return file_utils.read_key(self.get_data(), "last_manga_directory", False)

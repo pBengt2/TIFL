@@ -639,7 +639,6 @@ class MainGui(pyside_utils.VampaJpMainWidget):
     def add_vocab(self, word):
         if self.saved_data.add_vocab(word):
             self.vocab_model.add_vocab(word)
-            self.save_data(True)  # TODO: Should be handled in SavedData.add_vocab()
 
     def save_vocab_clicked(self):
         self.add_vocab(self.text_field.textCursor().selectedText())
@@ -656,10 +655,8 @@ class MainGui(pyside_utils.VampaJpMainWidget):
 
         for v in selected_vocab:
             if self.saved_data.remove_vocab(v):
-                self.save_data(True)  # TODO: Should be handled in SavedData.remove_vocab()
                 self.vocab_model.remove_vocab(v)
                 self.refresh_vocab_table()
-                return
 
     def vocab_drill_clicked(self):
         number_of_vocab = 10
@@ -966,12 +963,10 @@ class MainGui(pyside_utils.VampaJpMainWidget):
     def load_data(self):
         self.manga_mode = self.saved_data.was_manga_open()  # TODO: Manga should be it's own tab...
 
-        last_file = self.saved_data.get_last_open_file()
-
         if self.manga_mode:
-            self._load_manga_data(last_file)
+            self._load_manga_data(self.saved_data.get_last_manga_directory())
         else:
-            self.set_current_txt_file(last_file)
+            self.set_current_txt_file(self.saved_data.get_last_open_file())
 
         self.buffer_index = self.saved_data.get_book_index(self.current_txt_file)
 
@@ -984,40 +979,15 @@ class MainGui(pyside_utils.VampaJpMainWidget):
 
     def save_data(self, b_force=False):
         if self.data_stale or b_force:
-            # TODO: Saving should be handled by data_utils....
-            updated_book_dict = self.saved_data.get_book_dict()
-
-            if self.current_txt_file is not None:
-                updated_book_dict[self.current_txt_file.replace("\\", "/")] = {
-                    "index": self.find_current_sentence_index(),
-                    "total_chars": self.get_current_book_character_count()
-                }
-
-            if self.current_manga_directory:
-                updated_book_dict[self.current_manga_directory] = {
-                    "saved_chapter": self.manga_chapter,
-                    "saved_page": self.manga_page
-                }
-
-            pruned_book_dict = updated_book_dict.copy()
-            key_list = [k for k in pruned_book_dict.keys()]
-            for key in key_list:
-                if key is not None and key.startswith("TEMP"):
-                    pruned_book_dict.pop(key)
-
-            last_file = self.current_txt_file
-            if self.manga_mode:
-                last_file = self.current_manga_directory
-
-            data = {
-                "book_dict": pruned_book_dict,
-                "vocab_list": self.saved_data.get_vocab_list(),
-                "last_open_file": last_file,
-                "last_file_manga": self.manga_mode,
-                "last_manga_directory": self.current_manga_directory,
-                "last_date": str(date.today())
-            }
-            self.saved_data.save_data(data)
+            self.saved_data.update_saved_data(
+                current_txt_file=self.current_txt_file,
+                current_sentence_index=self.find_current_sentence_index(),
+                current_book_character_count=self.get_current_book_character_count(),
+                current_manga_directory=self.current_manga_directory,
+                manga_chapter=self.manga_chapter,
+                manga_page=self.manga_page,
+                manga_mode=self.manga_mode
+            )
     """************************************** END DATA **************************************"""
 
 
