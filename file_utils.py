@@ -6,6 +6,7 @@ DEFAULT_TXT_FILE = r"dummy_input.txt"
 
 
 def change_current_directory(full_path):
+    _create_directory_if_needed(full_path)
     os.chdir(full_path)
 
 

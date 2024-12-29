@@ -11,7 +11,11 @@ from jisho_api.word import Word
 
 import file_utils
 
-nhk = nhk_api.Api()
+try:
+    nhk = nhk_api.Api()
+except requests.exceptions.ConnectionError:
+    print("nhk failed to load, no interwebs")
+    nhk = None
 JAM = Jamdict()
 wakati = MeCab.Tagger("")
 
@@ -49,7 +53,11 @@ def get_definitions(word, num_definitions=3, basic=True, recursive_call=False):
     if word is None or len(word) == 0:
         return []
 
-    lookup_result = JAM.lookup(word)
+    try:
+        lookup_result = JAM.lookup(word)
+    except:
+        print("Error with JAM database...")
+        return []
     results = []
     num = 0
     for e in lookup_result.entries:
@@ -92,6 +100,9 @@ def download_nhk_news():
     #   - don't need m3u8 files
 
     # Current workaround is to change directory and change back.
+
+    if nhk is None:
+        return
 
     cur_dir = file_utils.get_current_directory()  # workaround
     file_utils.change_current_directory(cur_dir + "/News")  # workaround

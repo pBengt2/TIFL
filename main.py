@@ -781,6 +781,8 @@ class MainGui(pyside_utils.VampaJpMainWidget):
     def shift_pressed(self):
         self.show_english_definitions = True
         self.display_definitions(self.current_showing_word)
+        if self.main_settings.get_reset_mode():
+            self.set_location(self.find_current_sentence_index())
 
     def shift_released(self):
         self.show_english_definitions = False

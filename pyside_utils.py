@@ -7,12 +7,15 @@ import py_win_keyboard_layout as pwkl
 from PySide6.QtWidgets import QGridLayout, QCheckBox, QLabel, QLineEdit, QTextEdit, QListWidget, QWidget, QListWidgetItem, QMenu, QTableView, QPushButton
 from PySide6.QtGui import QKeyEvent, Qt, QColor, QCursor, QAction, QIntValidator
 from PySide6.QtCore import QAbstractTableModel, QEvent
+import PySide6.QtCore as Core
 
 import data_utils
 import jp_utils
 
 JAPANESE_LOCALE_ID = 68224017
 ENGLISH_LOCALE_ID = 67699721
+
+TRANSPARENT = False
 
 
 def change_to_japanese():
@@ -91,8 +94,15 @@ class VampaJpMainWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
 
+        if TRANSPARENT:
+            self.setAttribute(Core.Qt.WidgetAttribute.WA_TranslucentBackground)
+            #self.setAttribute(Core.Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint)
         self.ignore_key_lock = True
+        self.click_through = False
+
+    def focusInEvent(self, event):
+        print("h1")
 
     def post_load(self):
         self.setStyleSheet(get_style_sheet())
@@ -100,6 +110,18 @@ class VampaJpMainWidget(QWidget):
 
     def save_data(self, b_force=False):
         pass
+
+    def toggle_click_through(self):
+        if TRANSPARENT and self.click_through:
+            print("off")
+            self.click_through = False
+            self.setAttribute(Core.Qt.WidgetAttribute.WA_TransparentForMouseEvents, False)
+            self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint)
+        else:
+            self.click_through = True
+            self.setAttribute(Core.Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+            self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint)
+        self.show()
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_Return:  # enter
@@ -174,6 +196,8 @@ class VampaJpMainWidget(QWidget):
         if event.button() == Qt.MouseButton.LeftButton:
             self._move()
             return super().mousePressEvent(event)
+        if event.button() == Qt.MouseButton.MiddleButton:
+            self.toggle_click_through()
 
     def tab_pressed(self):
         pass
@@ -721,6 +745,8 @@ class COLORS:
     BLACK_BACKGROUND = BLACK
     DARK_BACKGROUND = BLACK_BLUE
 
+    OPAQUE = "rgba(30, 0, 125, 95)"
+
 
 # TODO: Add right click 'skip to here'
 class NoScrollTextEdit(QTextEdit):
@@ -768,6 +794,118 @@ def set_font_size(q_widget, size):
 
 
 def get_style_sheet():
+    style_sheets = ("QMainWindow {"
+                    "       background-color: " + COLORS.OPAQUE + "; "
+                    "       border: 1px solid black;"
+                    "}"
+                    "QListWidget {"
+                    "       border: 1px solid " + COLORS.DARK_BORDER.as_string() + "; "
+                    "       color: rgba(255, 0, 125, 125);"
+                    "       background-color: " + COLORS.OPAQUE + "; "
+                    "}"
+                    "QTextEdit {"
+                    "       border: 1px solid " + COLORS.DARK_BORDER.as_string() + "; "
+                    "       color: " + COLORS.STANDARD_TEXT.as_string() + "; "
+                    "       background-color: " + COLORS.OPAQUE + "; "
+                    "}"
+                    "QTableView {"
+                    "       border: 1px solid " + COLORS.DARK_BORDER.as_string() + "; "
+                    "       color: " + COLORS.STANDARD_TEXT.as_string() + "; "
+                    "       background-color: " + COLORS.OPAQUE + "; "
+                    "}"  
+                    "QTableView::item {"
+                    "       border: 1px solid " + COLORS.DARK_BORDER.as_string() + "; "
+                    "       color: " + COLORS.STANDARD_TEXT.as_string() + "; "
+                    "       background-color: " + COLORS.OPAQUE + "; "
+                    "}"  
+                    "QHeaderView {"
+                    "       border: 1px solid " + COLORS.DARK_BORDER.as_string() + "; "
+                    "       color: " + COLORS.STANDARD_TEXT.as_string() + "; "
+                    "       background-color: " + COLORS.OPAQUE + "; "
+                    "}"                                                       
+                    "QHeaderView::section {"
+                    "       border: 1px solid " + COLORS.DARK_BORDER.as_string() + "; "
+                    "       color: " + COLORS.STANDARD_TEXT.as_string() + "; "
+                    "       background-color: " + COLORS.OPAQUE + "; "
+                    "}"                                                         
+                    "QWidget {"
+                    "       color: " + COLORS.WHITE_TEXT.as_string() + "; "
+                    "       background-color: " + COLORS.OPAQUE + "; "
+                    "}"
+                    "QTabWidget::pane {"
+                    "       border: 1px solid " + COLORS.DARK_BORDER.as_string() + "; "
+                    "       color: " + COLORS.BLACK_TEXT.as_string() + "; "
+                    "       background-color: " + COLORS.OPAQUE + "; "
+                    "}"                                      
+                    "QTabBar {"
+                    "       border: 1px solid transparent; "
+                    "       color: " + COLORS.BLACK_TEXT.as_string() + "; "
+                    "       background-color: " + COLORS.OPAQUE + "; "
+                    "}"
+                    "QLineEdit {"
+                    "       border: 1px solid transparent; "
+                    "       color: " + COLORS.BRIGHT_TEXT.as_string() + "; "
+                    "       background-color: " + COLORS.OPAQUE + "; "
+                    "}"
+                    "QLabel {"
+                    "       border: 1px solid transparent; "
+                    "       color: " + COLORS.STANDARD_TEXT.as_string() + "; "
+                    "       background-color: " + COLORS.OPAQUE + "; "
+                    "}"
+                    "QTabBar::tab {"
+                    "       border: 1px solid " + COLORS.SECONDARY_DARK_BORDER.as_string() + "; "
+                    "       color: " + COLORS.SECONDARY_DARK_TEXT.as_string() + "; "
+                    "       background-color: " + COLORS.OPAQUE + "; "
+                    "}"
+                    "QTabBar::tab::selected {"
+                    "       border: 1px solid " + COLORS.STANDARD_BORDER.as_string() + "; "
+                    "       color: " + COLORS.STANDARD_TEXT.as_string() + "; "
+                    "       background-color: " + COLORS.OPAQUE + "; "
+                    "}"
+                    "QMenu {"
+                    "       border: 3px solid " + COLORS.DARK_BORDER.as_string() + "; "
+                    "       background-color: " + COLORS.OPAQUE + "; "
+                    "}"
+                    "QMenu::item {"
+                    "       border: 3px solid transparent; "
+                    "       color: " + COLORS.WHITE_TEXT.as_string() + "; "
+                    "       background-color: " + COLORS.OPAQUE + "; "
+                    "}"
+                    "QMenu::item:selected {"
+                    "       color: " + COLORS.BRIGHT_TEXT.as_string() + "; "
+                    "       background-color: " + COLORS.OPAQUE + "; "
+                    "}"
+                    "QMenu::item {"
+                    "       color: " + COLORS.WHITE_TEXT.as_string() + "; "
+                    "       background-color: " + COLORS.OPAQUE + "; "
+                    "}"
+                    "QPushButton {"
+                    "       min-height: 20px; "
+                    "       min-width: 50px; "
+                    "       background-color: " + COLORS.OPAQUE + "; "
+                    "       border: 2px solid " + COLORS.BRIGHT_BORDER.as_string() + "; "
+                    "       color: " + COLORS.BRIGHT_TEXT.as_string() + "; "
+                    "}"
+                    "QPushButton:Disabled {"
+                    "       background-color: " + COLORS.OPAQUE + "; "
+                    "       border: 2px solid " + COLORS.SECONDARY_DARK_BORDER.as_string() + "; "
+                    "       color: " + COLORS.SECONDARY_DARK_TEXT.as_string() + "; "
+                    "}"
+                    "QPushButton:hover:!pressed {"
+                    "       background-color: " + COLORS.OPAQUE + "; "
+                    "       border: 2px solid " + COLORS.STANDARD_BORDER.as_string() + "; "
+                    "       color: " + COLORS.BRIGHT_TEXT.as_string() + "; "
+                    "}"
+                    "QPushButton:pressed {"
+                    "       background-color: " + COLORS.OPAQUE + "; "
+                    "       border: 2px solid " + COLORS.STANDARD_BORDER.as_string() + "; "
+                    "       color: " + COLORS.STANDARD_TEXT.as_string() + "; "
+                    "}"
+                    )
+    return style_sheets
+
+
+def get_style_sheet_():
     style_sheets = ("QMainWindow {"
                     "       background-color: darkgray;"
                     "       border: 1px solid black;"

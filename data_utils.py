@@ -47,7 +47,11 @@ class MainSettings(JsonSingleton):
                 self._data['window_width'] = 1024
                 self._data['window_height'] = 1024
                 self._data['view_dual_panel_manga'] = True
+                self._data['reset_mode'] = False
         return self._data
+
+    def get_reset_mode(self):
+        return file_utils.read_key(self.get_data(), "reset_mode", False)
 
     def get_window_width(self):
         return file_utils.read_key(self.get_data(), "window_width", 1024)
