@@ -48,6 +48,7 @@ class MainSettings(JsonSingleton):
                 self._data['window_height'] = 1024
                 self._data['view_dual_panel_manga'] = True
                 self._data['reset_mode'] = False
+                self._data['autodownload_nhk_news'] = True
         return self._data
 
     def get_reset_mode(self):
@@ -58,6 +59,9 @@ class MainSettings(JsonSingleton):
 
     def get_window_height(self):
         return file_utils.read_key(self.get_data(), "window_height", 1024)
+
+    def autodownload_nhk_news(self):
+        return file_utils.read_key(self.get_data(), "autodownload_nhk_news", True)
 
     def view_dual_panel_manga(self):
         # TODO: This can be automatically handled based on window dimensions and image aspect ratio.

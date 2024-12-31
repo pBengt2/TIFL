@@ -972,7 +972,7 @@ class MainGui(pyside_utils.VampaJpMainWidget):
 
         self.buffer_index = self.saved_data.get_book_index(self.current_txt_file)
 
-        if self.saved_data.get_saved_date() != str(date.today()):
+        if self.main_settings.autodownload_nhk_news() and self.saved_data.get_saved_date() != str(date.today()):
             jp_utils.download_nhk_news()
 
         self.refresh_vocab_table()
