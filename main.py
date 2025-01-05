@@ -247,17 +247,17 @@ class MainGui(pyside_utils.VampaJpMainWidget):
         self.vocab_layout.setRowStretch(0, 1)
         self.vocab_layout.setRowStretch(1, 0)
 
-        pyside_utils.set_font_size(self.vocab_input_line, 32)
+        pyside_utils.set_font_size(self.vocab_input_line, self.main_settings.get_main_font_size())
         self.vocab_input_line.resize(512, 64)
         self.vocab_input_line.textChanged.connect(self.vocab_input_line_is_changed)
         self.vocab_input_line.selectionChanged.connect(self.vocab_input_text_selected)
 
-        pyside_utils.set_font_size(self.vocab_table, 32)
+        pyside_utils.set_font_size(self.vocab_table, self.main_settings.get_main_font_size())
 
     def _setup_news_tab(self):
         self.news_tab.setLayout(self.news_layout)
         self.news_layout.addWidget(self.news_field)
-        pyside_utils.set_font_size(self.news_field, 16)
+        pyside_utils.set_font_size(self.news_field, self.main_settings.get_sub_font_size())
 
         self.news_field.refresh_list()
         self.news_field.selectionModel().selectionChanged.connect(self.news_selection_changed)
@@ -265,7 +265,7 @@ class MainGui(pyside_utils.VampaJpMainWidget):
     def _setup_books_tab(self):
         self.books_tab.setLayout(self.books_layout)
         self.books_layout.addWidget(self.books_field)
-        pyside_utils.set_font_size(self.books_field, 16)
+        pyside_utils.set_font_size(self.books_field, self.main_settings.get_sub_font_size())
 
         self.books_field.refresh_list()
         self.books_field.selectionModel().selectionChanged.connect(self.books_selection_changed)
@@ -273,7 +273,7 @@ class MainGui(pyside_utils.VampaJpMainWidget):
     def _setup_manga_tab(self):
         self.manga_tab.setLayout(self.manga_layout)
         self.manga_layout.addWidget(self.manga_field)
-        pyside_utils.set_font_size(self.manga_field, 16)
+        pyside_utils.set_font_size(self.manga_field, self.main_settings.get_sub_font_size())
 
         self.manga_field.refresh_list()
         self.manga_field.selectionModel().selectionChanged.connect(self.manga_selection_changed)
@@ -283,7 +283,7 @@ class MainGui(pyside_utils.VampaJpMainWidget):
         self.log_layout.addWidget(self.log_field)
         self.log_field.setReadOnly(True)
         self.log_field.setHtml('')
-        pyside_utils.set_font_size(self.log_field, 16)
+        pyside_utils.set_font_size(self.log_field, self.main_settings.get_sub_font_size())
 
     def _setup_settings_tab(self):
         # TODO: Settings tab...
@@ -323,7 +323,7 @@ class MainGui(pyside_utils.VampaJpMainWidget):
     def _setup_text_field(self):
         self.text_field.setReadOnly(True)
         self.text_field.setHtml('<font color="blue">' + self.text_buffer[self.text_field_i1:self._get_max_text()] + '</font>')
-        pyside_utils.set_font_size(self.text_field, 32)
+        pyside_utils.set_font_size(self.text_field, self.main_settings.get_main_font_size())
         self.text_field.selectionChanged.connect(self.text_selected)
 
     def _setup_footer(self):
@@ -332,7 +332,7 @@ class MainGui(pyside_utils.VampaJpMainWidget):
         self.bottom_left_text.setMaximumHeight(16)
 
     def _setup_input_line(self):
-        pyside_utils.set_font_size(self.input_line, 32)
+        pyside_utils.set_font_size(self.input_line, self.main_settings.get_main_font_size())
         self.input_line.resize(512, 64)
         self.input_line.textChanged.connect(self.input_line_is_changed)
         self.input_line.selectionChanged.connect(self.input_text_selected)
@@ -340,12 +340,12 @@ class MainGui(pyside_utils.VampaJpMainWidget):
     def _setup_definition_field(self):
         self.definition_field.setReadOnly(True)
         self.definition_field.setHtml('')
-        pyside_utils.set_font_size(self.definition_field, 16)
+        pyside_utils.set_font_size(self.definition_field, self.main_settings.get_sub_font_size())
         self.definition_field.resize(256, 64)
 
         self.vocab_definition_field.setReadOnly(True)
         self.vocab_definition_field.setHtml('')
-        pyside_utils.set_font_size(self.vocab_definition_field, 16)
+        pyside_utils.set_font_size(self.vocab_definition_field, self.main_settings.get_sub_font_size())
         self.vocab_definition_field.resize(256, 64)
 
     def _setup_helper(self):

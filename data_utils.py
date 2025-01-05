@@ -46,10 +46,18 @@ class MainSettings(JsonSingleton):
             if self._data == {}:
                 self._data['window_width'] = 1024
                 self._data['window_height'] = 1024
+                self._data['main_font_size'] = 32
+                self._data['sub_font_size'] = 16
                 self._data['view_dual_panel_manga'] = True
                 self._data['reset_mode'] = False
                 self._data['autodownload_nhk_news'] = True
         return self._data
+
+    def get_main_font_size(self):
+        return file_utils.read_key(self.get_data(), "main_font_size", 32)
+
+    def get_sub_font_size(self):
+        return file_utils.read_key(self.get_data(), "sub_font_size", 16)
 
     def get_reset_mode(self):
         return file_utils.read_key(self.get_data(), "reset_mode", False)
@@ -71,12 +79,12 @@ class MainSettings(JsonSingleton):
         return min(max(320, int(self.get_window_height() * .75)), 1100)  # TODO: arbitrary
 
     def get_text_field_buffer_room(self):
-        chars_per_row = int(self.get_reading_min_width() / 30)
+        chars_per_row = int(self.get_reading_min_width() / self.get_main_font_size()) #30
         return chars_per_row + 3  # TODO: Arbitrary (before finishing second to last line...)
 
     def get_text_field_max_text(self):
-        chars_per_row = int(self.get_reading_min_width() / 30)  # TODO: just an estimate. Should check text size...
-        num_rows = int(self.get_reading_min_height() / 65)
+        chars_per_row = int(self.get_reading_min_width() / self.get_main_font_size())  # 30 TODO: just an estimate. Should check text size...
+        num_rows = int(self.get_reading_min_height() / self.get_main_font_size()*2)  # 60
         return chars_per_row * num_rows
 
     @staticmethod

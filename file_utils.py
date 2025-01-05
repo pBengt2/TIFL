@@ -81,8 +81,11 @@ def delete_files(directory, file_extension, ignore_files=None):
 
 
 def _create_directory_if_needed(filename):
-    if not os.path.exists(filename.rsplit(r'/', 1)[0]):
-        os.makedirs(filename.rsplit(r'/', 1)[0])
+    path = filename
+    if '.' in path:
+        path = path.rsplit(r'/', 1)[0]
+    if not os.path.exists(path):
+        os.makedirs(path)
 
 
 def save_txt_file(filename, text):
