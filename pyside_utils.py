@@ -341,10 +341,9 @@ class QuizGui(VampaJpMainWidget):
         self.setup_questions(question_list)
 
     def update_quiz_data(self):
-        question_list = data_utils.VocabQuizData().get_data()
-
+        vocab_list = data_utils.SavedData().get_vocab_list()
         keys = self.quiz_data.keys()
-        for v in question_list:
+        for v in vocab_list:
             if v not in keys:
                 definitions = jp_utils.get_definitions(v)
                 verb_type = str(jp_utils.get_verb_type(v))

@@ -189,7 +189,7 @@ class SavedData(JsonSingleton):
     def save_data(self, data):
         self._data = data
         self._book_dict = file_utils.read_key(self.get_data(), "book_dict", {})
-        self._vocab_list = file_utils.read_key(self.get_data(), "vocab_list", {})
+        self._vocab_list = file_utils.read_key(self.get_data(), "vocab_list", [])
         file_utils.save_json_data(self.json_file, data)
 
     def add_vocab(self, word):
@@ -215,7 +215,7 @@ class SavedData(JsonSingleton):
 
     def get_vocab_list(self):
         if self._vocab_list is None:
-            self._vocab_list = file_utils.read_key(self.get_data(), "vocab_list", {})
+            self._vocab_list = file_utils.read_key(self.get_data(), "vocab_list", [])
             # random.shuffle(self.vocab_list)
         return self._vocab_list
 
